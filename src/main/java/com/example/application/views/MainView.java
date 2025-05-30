@@ -36,8 +36,9 @@ public class MainView extends VerticalLayout {
 
         youtubeToSpotifyButton = new Button("YouTube to Spotify", new Icon(VaadinIcon.YOUTUBE));
         spotifyToYoutubeButton = new Button("Spotify to YouTube", new Icon(VaadinIcon.YOUTUBE));
+        searchButton = new Button("Search", new Icon(VaadinIcon.SEARCH));
 
-        HorizontalLayout modeButtonsLayout = new HorizontalLayout(youtubeToSpotifyButton, spotifyToYoutubeButton);
+        HorizontalLayout modeButtonsLayout = new HorizontalLayout(youtubeToSpotifyButton, spotifyToYoutubeButton, searchButton);
         modeButtonsLayout.setSpacing(true);
 
         linkInput = new TextField();
