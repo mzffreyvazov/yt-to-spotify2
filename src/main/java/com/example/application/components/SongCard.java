@@ -27,23 +27,23 @@ public class SongCard extends Div {
     }
 
     private void initializeComponent() {
-        // Album image
+        
         Image albumImage = new Image();
         albumImage.setSrc(spotifyResponse.getAlbumImageUrl() != null ?
                 spotifyResponse.getAlbumImageUrl() : "images/default-album.png");
         albumImage.setAlt("Album cover");
-        albumImage.setWidth("80px"); // You can adjust this
-        albumImage.setHeight("80px"); // You can adjust this
-        albumImage.getStyle().set("border-radius", "var(--lumo-border-radius-s)"); // Optional: rounded corners for image
-        albumImage.getStyle().set("object-fit", "cover"); // Ensures image covers the area well
+        albumImage.setWidth("80px"); 
+        albumImage.setHeight("80px"); 
+        albumImage.getStyle().set("border-radius", "var(--lumo-border-radius-s)"); 
+        albumImage.getStyle().set("object-fit", "cover"); 
 
-        // Song information
+        
         H4 songTitle = new H4(spotifyResponse.getSongTitle());
         songTitle.getStyle()
                 .set("margin-top", "0")
-                .set("margin-bottom", "var(--lumo-space-xs)") // Small space below title
+                .set("margin-bottom", "var(--lumo-space-xs)") 
                 .set("font-size", "1.1em")
-                .set("font-weight", "600"); // Bolder title
+                .set("font-weight", "600"); 
 
         Paragraph artist = new Paragraph(spotifyResponse.getArtistName());
         artist.getStyle()
@@ -55,43 +55,43 @@ public class SongCard extends Div {
         songInfoLayout.setSpacing(false);
         songInfoLayout.setPadding(false);
 
-        // Action buttons
+        
         createActionButtons();
 
         HorizontalLayout buttonsLayout = new HorizontalLayout(copyLinkButton, openSpotifyButton);
         buttonsLayout.setSpacing(true);
         buttonsLayout.setPadding(false);
-        buttonsLayout.getStyle().set("margin-top", "var(--lumo-space-s)"); // Space above buttons
+        buttonsLayout.getStyle().set("margin-top", "var(--lumo-space-s)"); 
 
-        // Right pane layout (song info + buttons)
+        
         VerticalLayout rightPaneLayout = new VerticalLayout(songInfoLayout, buttonsLayout);
-        rightPaneLayout.setSpacing(false); // Let individual components/layouts manage their spacing
+        rightPaneLayout.setSpacing(false); 
         rightPaneLayout.setPadding(false);
-        rightPaneLayout.setFlexGrow(1, songInfoLayout); // Allow song info to take available vertical space
+        rightPaneLayout.setFlexGrow(1, songInfoLayout); 
         rightPaneLayout.setWidthFull();
 
 
-        // Main layout (Image | Right Pane)
+        
         HorizontalLayout mainLayout = new HorizontalLayout(albumImage, rightPaneLayout);
         mainLayout.setWidthFull();
-        mainLayout.setAlignItems(Alignment.CENTER); // Vertically center items in the main layout
+        mainLayout.setAlignItems(Alignment.CENTER); 
         mainLayout.setSpacing(true);
-        mainLayout.getStyle().set("padding", "var(--lumo-space-s)"); // Inner padding for the card content
+        mainLayout.getStyle().set("padding", "var(--lumo-space-s)"); 
 
         add(mainLayout);
     }
 
     private void createActionButtons() {
-        // Copy Link button
+        
         copyLinkButton = new Button("Copy Link", VaadinIcon.COPY_O.create());
-        copyLinkButton.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY_INLINE); // More subtle
+        copyLinkButton.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY_INLINE); 
         copyLinkButton.setTooltipText("Copy Spotify link");
         copyLinkButton.setEnabled(spotifyResponse.getSpotifyUrl() != null && !spotifyResponse.getSpotifyUrl().isEmpty());
         copyLinkButton.addClickListener(e -> handleCopyLink());
 
-        // Open in Spotify button
-        openSpotifyButton = new Button("Open", VaadinIcon.EXTERNAL_LINK.create()); // Shorter text
-        openSpotifyButton.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_PRIMARY); // Primary action
+        
+        openSpotifyButton = new Button("Open", VaadinIcon.EXTERNAL_LINK.create()); 
+        openSpotifyButton.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_PRIMARY); 
         openSpotifyButton.setTooltipText("Open in Spotify");
         openSpotifyButton.setEnabled(spotifyResponse.getSpotifyUrl() != null && !spotifyResponse.getSpotifyUrl().isEmpty());
         openSpotifyButton.addClickListener(e -> handleOpenSpotify());
@@ -100,15 +100,15 @@ public class SongCard extends Div {
     private void setupStyling() {
         addClassName("song-card");
         getStyle()
-                .set("border", "1px solid var(--lumo-contrast-10pct)") // Slightly softer border
+                .set("border", "1px solid var(--lumo-contrast-10pct)") 
                 .set("border-radius", "var(--lumo-border-radius-m)")
-                .set("padding", "var(--lumo-space-s)") // Adjusted to be handled by mainLayout's padding
-                .set("margin-bottom", "var(--lumo-space-m)") // Space between cards
+                .set("padding", "var(--lumo-space-s)") 
+                .set("margin-bottom", "var(--lumo-space-m)") 
                 .set("background", "var(--lumo-base-color)")
-                .set("box-shadow", "var(--lumo-box-shadow-xs)") // Use Vaadin's predefined shadows
+                .set("box-shadow", "var(--lumo-box-shadow-xs)") 
                 .set("transition", "box-shadow 0.2s ease-in-out");
 
-        // Hover effect
+        
         getElement().addEventListener("mouseenter", e ->
                 getStyle().set("box-shadow", "var(--lumo-box-shadow-s)"));
         getElement().addEventListener("mouseleave", e ->
@@ -145,5 +145,5 @@ public class SongCard extends Div {
         return spotifyResponse;
     }
 
-    // Removed AddToPlaylistEvent and its listener registration method
+    
 }

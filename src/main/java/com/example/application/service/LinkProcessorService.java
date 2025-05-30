@@ -37,14 +37,14 @@ public class LinkProcessorService {
      * Search Spotify with progressive fallback strategies
      */
     private Mono<List<SpotifyResponse>> searchSpotifyWithFallbacks(SpotifySearchQuery query) {
-        // Strategy 1: Use field-specific search (track: artist:)
+        
         String specificQuery = query.toQueryString();
         LOGGER.info("Searching Spotify with specific query: " + specificQuery);
         
         return spotifyService.getSpotifyResponse(specificQuery)
                 .flatMap(results -> {
                     if (results == null || results.isEmpty()) {
-                        // Strategy 2: Try with a general search (no field prefixes)
+                        
                         String generalQuery = query.toGeneralQueryString();
                         LOGGER.info("No results with specific query, trying general query: " + generalQuery);
                         return spotifyService.getSpotifyResponse(generalQuery);
@@ -53,14 +53,14 @@ public class LinkProcessorService {
                 })
                 .flatMap(results -> {
                     if (results == null || results.isEmpty()) {
-                        // Strategy 3: Try with just the track title if artist search might be limiting results
+                        
                         String titleOnlyQuery = "track:" + query.getTitle();
                         LOGGER.info("No results with general query, trying title-only query: " + titleOnlyQuery);
                         return spotifyService.getSpotifyResponse(titleOnlyQuery);
                     }
                     return Mono.just(results);
                 })
-                .map(this::sortResultsByRelevance); // Sort results by relevance, not personalization
+                .map(this::sortResultsByRelevance); 
     }
     
     /**
@@ -72,11 +72,11 @@ public class LinkProcessorService {
             return results;
         }
         
-        // Sort by track popularity or other objective criteria
-        // This helps avoid results being sorted by your personal listening history
+        
+        
         results.sort((a, b) -> {
-            // If we had popularity data, we would use it here
-            // For now, just ensure stable sorting
+            
+            
             return a.getTrackId().compareTo(b.getTrackId());
         });
         
