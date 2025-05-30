@@ -9,8 +9,7 @@ import org.springframework.context.annotation.Bean;
 import java.time.Clock;
 
 @SpringBootApplication
-@Theme("default")
-public class Application implements AppShellConfigurator {
+public class Application {
 
     @Bean
     public Clock clock() {

@@ -19,7 +19,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.5</version>
+        <version>3.4.6</version>
         <relativePath/>
     </parent>
 
@@ -46,8 +46,8 @@
         <!-- Vaadin -->
         <dependency>
             <groupId>com.vaadin</groupId>
-            <!-- Replace artifactId with vaadin-core to use only free components -->
-            <artifactId>vaadin</artifactId>
+            <artifactId>vaadin-core</artifactId>
+            <!-- Version is managed by vaadin-bom -->
         </dependency>
         <dependency>
             <groupId>com.vaadin</groupId>
@@ -92,6 +92,7 @@
             <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-testcontainers</artifactId>
@@ -107,6 +108,12 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <!-- Version is managed by your Spring Boot parent/BOM -->
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
