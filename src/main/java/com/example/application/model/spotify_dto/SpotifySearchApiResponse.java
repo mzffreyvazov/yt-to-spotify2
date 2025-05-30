@@ -8,5 +8,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SpotifySearchApiResponse {
-    private Tracks tracks; // This is the top-level object containing track results
+    private Tracks tracks; 
 }

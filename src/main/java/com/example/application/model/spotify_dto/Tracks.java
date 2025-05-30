@@ -16,5 +16,5 @@ public class Tracks {
     private int offset;
     private String previous;
     private int total;
-    private List<TrackItem> items; // This is the list of individual track results
+    private List<TrackItem> items; 
 }

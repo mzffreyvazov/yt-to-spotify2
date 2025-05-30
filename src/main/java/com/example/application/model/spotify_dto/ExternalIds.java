@@ -8,6 +8,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ExternalIds {
-    private String isrc; // International Standard Recording Code, a unique identifier for the track // Universal Product Code, yet another identifier for the track
+    private String isrc; 
     
 }

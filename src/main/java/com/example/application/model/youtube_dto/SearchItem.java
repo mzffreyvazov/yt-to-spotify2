@@ -8,8 +8,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SearchItem {
-    private String kind; // e.g., "YoutubeResult"
+    private String kind; 
     private String etag;
-    private Id id; // Contains the specific ID of the resource (video, channel, playlist)
+    private Id id; 
     private Snippet snippet;
 }

@@ -8,12 +8,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Snippet {
-    private String publishedAt; // ISO 8601 format date/time
+    private String publishedAt; 
     private String channelId;
     private String title;
     private String description;
-    private Thumbnails thumbnails; // Object containing different thumbnail sizes
+    private Thumbnails thumbnails; 
     private String channelTitle;
-    private String liveBroadcastContent; // e.g., "none", "live", "upcoming"
-    // Other fields can be added here if needed from the snippet (e.g., tags, categoryId, etc.)
+    private String liveBroadcastContent; 
+    
 }

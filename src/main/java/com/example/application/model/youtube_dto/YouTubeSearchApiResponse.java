@@ -11,10 +11,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class YouTubeSearchApiResponse {
     
-    private String kind; // e.g., "YoutubeListResponse"
+    private String kind; 
     private String etag;
-    private String nextPageToken; // Token for fetching the next page of results
+    private String nextPageToken; 
     private String regionCode;
-    private PageInfo pageInfo; // Contains totalResults and resultsPerPage
+    private PageInfo pageInfo; 
     private List<SearchItem> items; 
 }

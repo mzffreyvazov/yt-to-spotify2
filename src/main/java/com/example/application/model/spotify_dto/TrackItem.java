@@ -12,14 +12,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TrackItem {
-    private String id; // This is our trackId
-    private String name; // This is our songTitle
+    private String id; 
+    private String name; 
 
-    private AlbumSearch album; // Contains album details, including images
-    private List<Artist> artists; // List of artists for the track
-    private String preview_url; // This is our previewUrl
+    private AlbumSearch album; 
+    private List<Artist> artists; 
+    private String preview_url; 
 
-    @JsonProperty("external_urls") // To map "external_urls" JSON key to externalUrls field
+    @JsonProperty("external_urls") 
     private ExternalUrls externalUrls;
 
 }

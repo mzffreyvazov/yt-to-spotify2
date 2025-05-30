@@ -22,37 +22,33 @@ public class ApiWebClientsConfig {
     private String trackBaseUrlYoutube;        
 
     @Bean
-    @Qualifier("searchWebClientSpotify") // Use a qualifier for clarity
+    @Qualifier("searchWebClientSpotify") 
     public WebClient searchWebClient(WebClient.Builder webClientBuilder) {
         return webClientBuilder
                 .baseUrl(searchBaseUrlSpotify)
-                // You can add specific filters, timeouts, etc., for the search API
                 .build();
     }
 
     @Bean
-    @Qualifier("trackWebClientSpotify") // Another qualifier for the track API
+    @Qualifier("trackWebClientSpotify") 
     public WebClient trackWebClient(WebClient.Builder webClientBuilder) {
         return webClientBuilder
                 .baseUrl(trackBaseUrlSpotify)
-                // You can add specific filters, timeouts, etc., for the track API
                 .build();
     }
     @Bean
-    @Qualifier("searchWebClientYoutube") // Use a qualifier for clarity
+    @Qualifier("searchWebClientYoutube") 
     public WebClient searchWebClientYt(WebClient.Builder webClientBuilder) {
         return webClientBuilder
                 .baseUrl(searchBaseUrlYoutube)
-                // You can add specific filters, timeouts, etc., for the search API
                 .build();
     }
 
     @Bean
-    @Qualifier("trackWebClientYoutube") // Another qualifier for the track API
+    @Qualifier("trackWebClientYoutube") 
     public WebClient trackWebClientYt(WebClient.Builder webClientBuilder) {
         return webClientBuilder
                 .baseUrl(trackBaseUrlYoutube)
-                // You can add specific filters, timeouts, etc., for the track API
                 .build();
     }
 

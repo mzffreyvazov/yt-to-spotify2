@@ -10,7 +10,6 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
-import org.atmosphere.config.service.Get;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -26,12 +25,12 @@ public class SpotifyController {
 
     @GetMapping("/search")
     public Mono<List<SpotifyResponse>> getMethodName(@RequestParam String query) {
-        return spotifyService.getSpotifyResponse(query); // Blocking for simplicity, consider using reactive patterns in production
+        return spotifyService.getSpotifyResponse(query); 
     }
     
     @GetMapping("/search/track")
     public Mono<SpotifyResponse> getTrack(@RequestParam String trackId) {
-        return spotifyService.getSingleTrack(trackId); // Blocking for simplicity, consider using reactive patterns in production
+        return spotifyService.getSingleTrack(trackId); 
     }
     
 }

@@ -8,5 +8,5 @@ import lombok.AllArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ExternalUrls {
-    private String spotify; // The URL to the track on Spotify
+    private String spotify; 
 }

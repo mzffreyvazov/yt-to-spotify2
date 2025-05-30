@@ -10,6 +10,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AlbumSearch {
-    private List<Image> images; // List of album art images
-    // We don't need to map other album fields like album_type, name, release_date, etc.
+    private List<Image> images; 
 }

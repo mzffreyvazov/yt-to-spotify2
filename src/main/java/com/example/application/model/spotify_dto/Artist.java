@@ -8,6 +8,5 @@ import lombok.AllArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Artist {
-    private String name; // This is our artistName
-    // We don't need to map other artist fields like id, href, external_urls
+    private String name; 
 }

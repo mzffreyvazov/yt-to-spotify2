@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 public class VideoItem {
     private String kind;
     private String etag;
-    private String id;  // Simple string, not an object
+    private String id;  
     private Snippet snippet;
     private ContentDetails contentDetails;
     private Statistics statistics;
