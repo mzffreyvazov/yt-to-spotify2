@@ -77,7 +77,3 @@ The application will be accessible at `http://localhost:8080`.
 
 *   YouTube to Spotify conversion is functional.
 *   Spotify to YouTube conversion is **not yet implemented**.
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a pull request or open an issue.
