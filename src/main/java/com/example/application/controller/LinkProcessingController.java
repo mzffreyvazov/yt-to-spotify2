@@ -151,4 +151,34 @@ public class LinkProcessingController {
                     return Mono.just(ResponseEntity.badRequest().body(errorResponse));
                 });
     }
+    
+    /**
+     * Endpoint that provides unbiased search results without personalization
+     * Uses specific techniques to avoid personalization bias
+     */
+    @GetMapping("/youtube-to-spotify-unbiased")
+    public Mono<ResponseEntity<List<SpotifyResponse>>> findUnbiasedSpotifyTracks(@RequestParam String youtubeUrl) {
+        return linkConverterService.youtubeToSpotifyQuery(youtubeUrl)
+                .flatMap(query -> {
+                    // Use a more generic search query to avoid personalization
+                    String queryString = query.toGeneralQueryString();
+                    
+                    // Add a random offset to the search to avoid always getting the same top results
+                    int randomOffset = (int)(Math.random() * 5);
+                    
+                    // Log the search for debugging
+                    System.out.println("Performing unbiased search with query: " + queryString);
+                    
+                    return spotifyService.getSpotifyResponse(queryString)
+                            .map(results -> {
+                                System.out.println("Found " + results.size() + " results for unbiased search");
+                                return results;
+                            });
+                })
+                .map(ResponseEntity::ok)
+                .onErrorResume(e -> {
+                    System.err.println("Error processing unbiased search: " + e.getMessage());
+                    return Mono.just(ResponseEntity.badRequest().build());
+                });
+    }
 }

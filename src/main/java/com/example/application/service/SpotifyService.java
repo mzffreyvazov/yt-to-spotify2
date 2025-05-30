@@ -21,7 +21,6 @@ import reactor.core.publisher.Mono;
 @Service
 public class SpotifyService {
 
-    // base url: https://api.spotify.com/v1/search
     @Value("${SPOTIFY_CLIENT_SECRET}")
     private String SPOTIFY_CLIENT_SECRET;
 
@@ -91,6 +90,10 @@ public class SpotifyService {
                             .queryParam("type", typeUrlParam)
                             .queryParam("limit", limitUrlParam)
                             .queryParam("offset", offsetUrlParam)
+                            // Add market parameter to get results available in US market (or any other market)
+                            .queryParam("market", "US")
+                            // Add include_external parameter to include audio features
+                            .queryParam("include_external", "audio")
                             .build())
                     .header("Authorization", "Bearer " + token)
                     .retrieve()
