@@ -193,10 +193,7 @@ public class MainView extends VerticalLayout {
                 // Create and add SongCard components for each result
                 for (SpotifyResponse track : spotifyTracks) {
                     SongCard songCard = new SongCard(track);
-                    
-                    // Listen for add to playlist events
-                    songCard.addAddToPlaylistListener(event -> 
-                        handleAddToPlaylist(event.getSpotifyResponse()));
+                
                     
                     resultsLayout.add(songCard);
                 }
