@@ -26,11 +26,13 @@ public class YoutubeController {
 
     @GetMapping("/search")
     public Mono<List<YoutubeResponse>> searchVideos(@RequestParam String query) {
-        // The service now returns a Mono<List<YoutubeResponse>>
-        // Spring WebFlux will automatically subscribe to this Mono
-        // and return the List<YoutubeResponse> in the HTTP response once available.
+
         return youtubeService.getYoutubeResponse(query);
     }
 
+    @GetMapping("/video")
+    public Mono<YoutubeResponse> getVideo(@RequestParam String videoId) {
+        return youtubeService.getSingleVideo(videoId);
+    }
     
 }
