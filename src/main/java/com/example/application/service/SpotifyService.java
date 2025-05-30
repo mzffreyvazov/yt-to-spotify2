@@ -5,13 +5,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.example.application.model.response.SpotifyResponse;
 import com.example.application.model.spotify_dto.SpotifySearchApiResponse;
 import com.example.application.model.spotify_dto.TrackItem;
+import com.example.application.model.spotify_dto.SingleTrackItem;
 import com.example.application.model.spotify_dto.SpotifyAuthResponse;
 import reactor.core.publisher.Mono;
 
@@ -29,7 +32,8 @@ public class SpotifyService {
     private String SPOTIFY_AUTH_URL;
 
 
-    private WebClient webClient;
+    private WebClient searchWebClient;
+    private WebClient trackWebClient;
     private Mono<String> accessTokenMono;
 
     // api parameters
@@ -37,10 +41,10 @@ public class SpotifyService {
     private static final int limitUrlParam = 10;
     private static final int offsetUrlParam = 0;
 
-
-
-    public SpotifyService(WebClient.Builder webClientBuilder) {
-        this.webClient = webClientBuilder.baseUrl("https://api.spotify.com/v1/search").build();
+    public SpotifyService(@Qualifier("searchWebClient") WebClient searchWebClient,
+                          @Qualifier("trackWebClient") WebClient trackWebClient) {
+        this.searchWebClient = searchWebClient;
+        this.trackWebClient = trackWebClient;
     }
 
     private Mono<String> getCachedAccessToken() {
@@ -81,7 +85,7 @@ public class SpotifyService {
 
     public Mono<List<SpotifyResponse>> getSpotifyResponse(String searchQuery) {
         return getCachedAccessToken().flatMap(token ->
-            webClient.get()
+            searchWebClient.get()
                     .uri(uriBuilder -> uriBuilder
                             .queryParam("q", searchQuery)
                             .queryParam("type", typeUrlParam)
@@ -125,4 +129,38 @@ public class SpotifyService {
         return new SpotifyResponse(trackId, songTitle, artistName, albumImageUrl, previewUrl, spotifyUrl);
     }
 
+    private SpotifyResponse mapTrackItemToSpotifyResponse(SingleTrackItem item) {
+        if (item == null || item.getAlbum() == null || item.getAlbum().getReleaseDate() == null || item.getArtist() == null) {
+            return null;
+        }
+
+        String trackId = item.getId();
+        String songTitle = item.getName();
+        String artistName = item.getArtist().getName();
+        String spotifyUrl = (item.getExternalUrls() != null) ? item.getExternalUrls().getSpotify() : null;
+        String previewUrl = item.getPreviewUrl();
+
+        String albumImageUrl = null;
+        if (!item.getAlbum().getImages().isEmpty()) {
+            // Sort by width descending to get the largest image
+            item.getAlbum().getImages().sort((img1, img2) -> Integer.compare(img2.getWidth(), img1.getWidth()));
+            albumImageUrl = item.getAlbum().getImages().get(0).getUrl();
+        }
+
+        // Add the missing return statement
+        return new SpotifyResponse(trackId, songTitle, artistName, albumImageUrl, previewUrl, spotifyUrl);
+    }
+
+
+    public Mono<SpotifyResponse> getSingleTrack(@RequestParam String trackId) {
+        return getCachedAccessToken().flatMap(token ->
+            trackWebClient.get()
+                    .uri("/{id}", trackId)
+                    .header("Authorization", "Bearer " + token)
+                    .retrieve()
+                    .bodyToMono(TrackItem.class)  // Changed from SingleSpotifySearchApiResponse.class to TrackItem.class
+                    .map(this::mapTrackItemToSpotifyResponse)  // Use the first mapper method directly
+                    .switchIfEmpty(Mono.error(new RuntimeException("Track not found")))
+        );
+    }
 }

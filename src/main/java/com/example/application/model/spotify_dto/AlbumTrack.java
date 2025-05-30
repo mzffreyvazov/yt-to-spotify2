@@ -2,6 +2,8 @@ package com.example.application.model.spotify_dto;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -9,7 +11,9 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Album {
-    private List<Image> images; // List of album art images
-    // We don't need to map other album fields like album_type, name, release_date, etc.
+public class AlbumTrack {
+    @JsonProperty("release_date")   
+    private String releaseDate; 
+
+    private List<Image> images;
 }
