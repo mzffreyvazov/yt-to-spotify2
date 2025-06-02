@@ -12,4 +12,4 @@
 node_modules/
 src/main/frontend/generated/
 vite.generated.ts
-*.properties
+env.properties

@@ -36,9 +36,11 @@ public class MainView extends VerticalLayout {
     private boolean youtubeToSpotifyMode = true; // true for YouTube to Spotify, false for Spotify to YouTube
 
     public MainView() {
+        String baseUrl = System.getProperty("app.base.url", "http://localhost:8080");
+
         // Initialize WebClient to call your REST endpoints
         this.webClient = WebClient.builder()
-            .baseUrl("http://localhost:8080") // Adjust port if different
+            .baseUrl(baseUrl) // Adjust port if different
             .build();
             
         setSizeFull();
