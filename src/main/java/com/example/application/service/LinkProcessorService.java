@@ -7,8 +7,6 @@ import com.example.application.model.queries.YoutubeSearchQuery;
 import com.example.application.model.response.SpotifyResponse;
 import com.example.application.model.response.YoutubeResponse;
 import org.apache.commons.text.similarity.LevenshteinDistance;
-import org.apache.commons.text.similarity.JaroWinklerSimilarity;
-import java.util.Comparator;
 import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.logging.Logger;

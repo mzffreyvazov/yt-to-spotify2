@@ -165,7 +165,7 @@ public class LinkProcessingController {
                     String queryString = query.toGeneralQueryString();
                     
                     // Add a random offset to the search to avoid always getting the same top results
-                    int randomOffset = (int)(Math.random() * 5);
+                    // int randomOffset = (int)(Math.random() * 5);
                     
                     // Log the search for debugging
                     System.out.println("Performing unbiased search with query: " + queryString);
