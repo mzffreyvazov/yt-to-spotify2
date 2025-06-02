@@ -17,19 +17,19 @@ public class YoutubeSearchQuery {
 
         // Add title search filter if title is provided
         if (title != null && !title.isEmpty()) {
-            query.append("title:").append(cleanSearchTerm(title));
+            query.append("").append(cleanSearchTerm(title));
         }
 
         // Add artist search filter if artist is provided
         if (artist != null && !artist.isEmpty()) {
             if (query.length() > 0) query.append(" ");
-            query.append("artist:").append(cleanSearchTerm(artist));
+            query.append("").append(cleanSearchTerm(artist));
         }
 
         // Add album search filter if album is provided
         if (album != null && !album.isEmpty()) {
             if (query.length() > 0) query.append(" ");
-            query.append("album:").append(cleanSearchTerm(album));
+            query.append("").append(cleanSearchTerm(album));
         }
 
         return query.toString();

@@ -13,14 +13,12 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.page.Push;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 import java.util.List;
 
 
@@ -52,7 +50,7 @@ public class MainView extends VerticalLayout {
         description.getStyle().set("text-align", "center");
         description.getStyle().set("max-width", "600px");
 
-        youtubeToSpotifyButton = new Button("YouTube to Spotify", new Icon(VaadinIcon.YOUTUBE));
+        youtubeToSpotifyButton = new Button("YouTube to Spotify", new Icon(VaadinIcon.MUSIC));
         spotifyToYoutubeButton = new Button("Spotify to YouTube", new Icon(VaadinIcon.MUSIC));
 
         HorizontalLayout modeButtonsLayout = new HorizontalLayout(youtubeToSpotifyButton, spotifyToYoutubeButton);
@@ -92,7 +90,6 @@ public class MainView extends VerticalLayout {
             }
         });
 
-        // Add Enter key listener to the text field
         linkInput.addKeyPressListener(com.vaadin.flow.component.Key.ENTER, event -> {
             String link = linkInput.getValue();
             if (link != null && !link.trim().isEmpty()) {
@@ -102,7 +99,7 @@ public class MainView extends VerticalLayout {
 
         resultsLayout = new VerticalLayout();
         resultsLayout.setWidth("clamp(300px, 80%, 800px)");
-        resultsLayout.setAlignItems(Alignment.STRETCH); // Results should stretch
+        resultsLayout.setAlignItems(Alignment.STRETCH); 
 
         add(title, description, modeButtonsLayout, linkInput, searchButton, resultsLayout);
     }

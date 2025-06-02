@@ -23,21 +23,21 @@ public class SpotifySearchQuery {
         if (title != null && !title.isEmpty()) {
             // Clean up the title for search purposes
             String cleanTitle = cleanSearchTerm(title);
-            query.append("track:").append(cleanTitle);
+            query.append(cleanTitle);
         }
         
         // Add artist search filter if artist is provided
         if (artist != null && !artist.isEmpty()) {
             if (!query.isEmpty()) query.append(" ");
             String cleanArtist = cleanSearchTerm(artist);
-            query.append("artist:").append(cleanArtist);
+            query.append("").append(cleanArtist);
         }
         
         // Add album search filter if album is provided
         if (album != null && !album.isEmpty()) {
             if (!query.isEmpty()) query.append(" ");
             String cleanAlbum = cleanSearchTerm(album);
-            query.append("album:").append(cleanAlbum);
+            query.append("").append(cleanAlbum);
         }
         
         return query.toString();

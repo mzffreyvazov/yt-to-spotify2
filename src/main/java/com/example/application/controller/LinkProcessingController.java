@@ -201,4 +201,46 @@ public class LinkProcessingController {
                     return Mono.just(ResponseEntity.badRequest().build());
                 });
     }
+
+
+    // Add this endpoint after the existing /spotify-to-youtube endpoint
+/**
+ * A more detailed endpoint that returns both the query and YouTube results
+ * Includes query generation details and search parameters
+ */
+        @GetMapping("/spotify-to-youtube-detailed")
+        public Mono<ResponseEntity<Map<String, Object>>> findYoutubeTracksDetailed(@RequestParam String spotifyUrl) {
+            return linkConverterService.spotifyToYoutubeQuery(spotifyUrl)
+                    .flatMap(query -> {
+                        String queryString = query.toQueryString();
+                        String generalQueryString = query.toGeneralQueryString();
+                        
+                        return linkProcessorService.processSpotifyLink(spotifyUrl)
+                                .map(results -> {
+                                    Map<String, Object> response = new HashMap<>();
+                                    response.put("query", query);
+                                    response.put("specificQueryString", queryString);
+                                    response.put("generalQueryString", generalQueryString);
+                                    response.put("results", results);
+                                    response.put("spotifyUrl", spotifyUrl);
+                                    response.put("count", results.size());
+                                    
+                                    // Add additional search metadata
+                                    Map<String, String> searchMetadata = new HashMap<>();
+                                    searchMetadata.put("searchType", "track");
+                                    searchMetadata.put("resultLimit", "5");
+                                    searchMetadata.put("includeCovers", "true");
+                                    response.put("searchMetadata", searchMetadata);
+                                    
+                                    return response;
+                                });
+                    })
+                    .map(ResponseEntity::ok)
+                    .onErrorResume(e -> {
+                        Map<String, Object> errorResponse = new HashMap<>();
+                        errorResponse.put("error", e.getMessage());
+                        errorResponse.put("spotifyUrl", spotifyUrl);
+                        return Mono.just(ResponseEntity.badRequest().body(errorResponse));
+                    });
+        }
 }

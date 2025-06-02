@@ -111,7 +111,7 @@ public class LinkConvertorService {
         
         // Clean up title and artist name to create an effective search query
         String songTitle = cleanupTitle(ytResponse.getSongTitle());
-        String artistName = ytResponse.getArtistName();
+        String artistName = cleanupArtist(ytResponse.getArtistName());
         
         SpotifySearchQuery query = new SpotifySearchQuery();
         query.setTitle(songTitle);
@@ -155,6 +155,21 @@ public class LinkConvertorService {
         cleaned = cleaned.replaceAll("(?i)\\s*official\\s*music\\s*video.*", ""); // Remove "official music video"
         
         // Trim any leading/trailing whitespace
+        return cleaned.trim();
+    }    
+    
+    private String cleanupArtist(String artist) {
+        if (artist == null) return "";
+        
+        // Remove common noise in artist names
+        String cleaned = artist.replaceAll("(?i)\\s*\\(.*?\\)", ""); // Remove anything in parentheses
+        cleaned = cleaned.replaceAll("(?i)\\s*\\[.*?\\]", ""); // Remove anything in brackets
+        cleaned = cleaned.replaceAll("(?i)\\s*ft\\..*", ""); // Remove featuring artists
+        cleaned = cleaned.replaceAll("(?i)\\s*-\\s*Topic\\s*$", ""); // Remove "- Topic" suffix
+        cleaned = cleaned.replaceAll("(?i)\\s*VEVO\\s*$", ""); // Remove "VEVO" suffix
+        cleaned = cleaned.replaceAll("(?i)\\s*Official\\s*$", ""); // Remove "Official" suffix
+        cleaned = cleaned.replaceAll("(?i)\\s*Music\\s*$", ""); // Remove "Music" suffix
+        
         return cleaned.trim();
     }
 }
