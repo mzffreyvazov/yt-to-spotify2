@@ -2,6 +2,7 @@ package com.example.application.views;
 
 import com.example.application.components.SongCard;
 import com.example.application.model.response.SpotifyResponse;
+import com.example.application.model.response.YoutubeResponse;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.H1;
@@ -165,11 +166,18 @@ public class MainView extends VerticalLayout {
 
     private void searchSpotifyToYouTube(String spotifyUrl) {
         // For now, show a message that this feature is not implemented
-        getUI().ifPresent(ui -> ui.access(() -> {
-            resultsLayout.removeAll();
-            resultsLayout.add(new Paragraph("Spotify to YouTube conversion is not yet implemented."));
-            resetSearchButton();
-        }));
+        webClient.get()
+            .uri(uriBuilder -> uriBuilder
+                .path("/api/links/spotify-to-youtube")
+                .queryParam("spotifyUrl", spotifyUrl)
+                .build())
+            .accept(MediaType.APPLICATION_JSON)
+            .retrieve()
+            .bodyToMono(new ParameterizedTypeReference<List<YoutubeResponse>>() {})
+            .subscribe(
+                this::displayYoutubeResults,
+                this::handleError
+            );
     }
 
     private void displaySpotifyResults(List<SpotifyResponse> spotifyTracks) {
@@ -207,6 +215,39 @@ public class MainView extends VerticalLayout {
         }));
     }
 
+    private void displayYoutubeResults(List<YoutubeResponse> youtubeVideos) {
+        getUI().ifPresent(ui -> ui.access(() -> {
+            // Detach resultsLayout before modifying its children
+            this.remove(resultsLayout);
+            
+            resultsLayout.removeAll(); // Clear previous content
+            
+            if (youtubeVideos == null || youtubeVideos.isEmpty()) {
+                Paragraph noResults = new Paragraph("No matching videos found. Try a different link or check if the video is a music video.");
+                noResults.getStyle().set("text-align", "center");
+                noResults.getStyle().set("color", "var(--lumo-secondary-text-color)");
+                resultsLayout.add(noResults);
+            } else {
+                Paragraph resultsHeader = new Paragraph("Found " + youtubeVideos.size() + " matching video" + (youtubeVideos.size() == 1 ? "" : "s") + ":");
+                resultsHeader.getStyle().set("font-weight", "bold");
+                resultsHeader.getStyle().set("margin-bottom", "var(--lumo-space-m)");
+                resultsLayout.add(resultsHeader);
+                
+                // Create and add SongCard components for each result
+                for (YoutubeResponse video : youtubeVideos) {
+                    SongCard songCard = new SongCard(video);
+                    resultsLayout.add(songCard);
+                }
+                
+                showNotification("Found " + youtubeVideos.size() + " matching videos!", NotificationVariant.LUMO_SUCCESS);
+            }
+            
+            // Re-attach resultsLayout after modifications
+            this.add(resultsLayout);
+            resetSearchButton();
+        }));
+    }
+
     private void handleError(Throwable error) {
         getUI().ifPresent(ui -> ui.access(() -> {
             // Detach resultsLayout before modifying its children
@@ -230,16 +271,16 @@ public class MainView extends VerticalLayout {
         }));
     }
 
-    private void handleAddToPlaylist(SpotifyResponse spotifyResponse) {
-        // Implement playlist functionality here
-        // For now, just show a notification
-        showNotification("Added '" + spotifyResponse.getSongTitle() + "' by " + 
-                        spotifyResponse.getArtistName() + " to playlist!", 
-                        NotificationVariant.LUMO_SUCCESS);
+    // private void handleAddToPlaylist(SpotifyResponse spotifyResponse) {
+    //     // Implement playlist functionality here
+    //     // For now, just show a notification
+    //     showNotification("Added '" + spotifyResponse.getSongTitle() + "' by " + 
+    //                     spotifyResponse.getArtistName() + " to playlist!", 
+    //                     NotificationVariant.LUMO_SUCCESS);
         
-        // You could implement actual playlist functionality here
-        // For example, save to a user's playlist, or create a temporary playlist
-    }
+    //     // You could implement actual playlist functionality here
+    //     // For example, save to a user's playlist, or create a temporary playlist
+    // }
 
     private void resetSearchButton() {
         searchButton.setEnabled(true);
@@ -251,7 +292,7 @@ public class MainView extends VerticalLayout {
     }
 
     private void showNotification(String message, NotificationVariant variant) {
-        Notification notification = Notification.show(message, 4000, Notification.Position.TOP_CENTER);
+        Notification notification = Notification.show(message, 2000, Notification.Position.TOP_CENTER);
         notification.addThemeVariants(variant);
     }
 }

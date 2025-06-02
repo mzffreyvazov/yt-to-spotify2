@@ -4,6 +4,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.example.application.model.queries.SpotifySearchQuery;
 import com.example.application.model.response.SpotifyResponse;
+import com.example.application.model.response.YoutubeResponse;
 import com.example.application.service.LinkConvertorService;
 import com.example.application.service.LinkProcessorService;
 import com.example.application.service.SpotifyService;
@@ -178,6 +179,25 @@ public class LinkProcessingController {
                 .map(ResponseEntity::ok)
                 .onErrorResume(e -> {
                     System.err.println("Error processing unbiased search: " + e.getMessage());
+                    return Mono.just(ResponseEntity.badRequest().build());
+                });
+    }
+
+
+    @GetMapping("/spotify-to-youtube")
+    public Mono<ResponseEntity<List<YoutubeResponse>>> findYoutubeTracks(@RequestParam String spotifyUrl) {
+        return linkProcessorService.processSpotifyLink(spotifyUrl)
+                .map(results -> {
+                    if (results.isEmpty()) {
+                        System.out.println("Warning: No Youtube tracks found for: " + spotifyUrl);
+                    } else {
+                        System.out.println("Found " + results.size() + " Youtube tracks for: " + spotifyUrl);
+                    }
+                    return ResponseEntity.ok(results);
+                })
+                .onErrorResume(e -> {
+                    System.err.println("Error processing Spotify to YouTube conversion: " + e.getMessage());
+                    e.printStackTrace();
                     return Mono.just(ResponseEntity.badRequest().build());
                 });
     }

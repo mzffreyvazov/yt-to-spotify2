@@ -1,8 +1,12 @@
 package com.example.application.service;
 
 import org.springframework.stereotype.Service;
+
+import com.example.application.model.response.SpotifyResponse;
 import com.example.application.model.response.YoutubeResponse;
 import com.example.application.model.queries.SpotifySearchQuery;
+import com.example.application.model.queries.YoutubeSearchQuery;
+
 import reactor.core.publisher.Mono;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -11,6 +15,7 @@ import java.util.regex.Pattern;
 public class LinkConvertorService {
     
     private final YoutubeService youtubeService;
+    private final SpotifyService spotifyService;
     
     // Regex patterns for extracting IDs from different URL formats
     private static final Pattern YT_VIDEO_ID_PATTERN = Pattern.compile(
@@ -20,7 +25,8 @@ public class LinkConvertorService {
     private static final Pattern SPOTIFY_TRACK_ID_PATTERN = Pattern.compile(
             "open\\.spotify\\.com/track/([\\w\\d]+)");
     
-    public LinkConvertorService(YoutubeService youtubeService) {
+    public LinkConvertorService(YoutubeService youtubeService, SpotifyService spotifyService) {
+        this.spotifyService = spotifyService;
         this.youtubeService = youtubeService;
     }
     
@@ -82,6 +88,18 @@ public class LinkConvertorService {
         return youtubeService.getSingleVideo(videoId)
                 .map(this::createSpotifyQueryFromYoutubeResponse);
     }
+
+    public Mono<YoutubeSearchQuery> spotifyToYoutubeQuery(String spotifyUrl) {
+        String trackId = extractSpotifyId(spotifyUrl);
+        if (trackId == null) {
+            return Mono.error(new IllegalArgumentException("Invalid Spotify URL: " + spotifyUrl));
+        }
+        
+        // Here you would implement logic to convert Spotify track ID to a YouTube search query
+        // This is a placeholder as the actual implementation depends on your requirements
+        return this.spotifyService.getSingleTrack(trackId)
+                .map(this::createYoutubeSearchQueryFromSpotify);
+    }
     
     /**
      * Creates a Spotify search query from YouTube response data
@@ -96,6 +114,22 @@ public class LinkConvertorService {
         String artistName = ytResponse.getArtistName();
         
         SpotifySearchQuery query = new SpotifySearchQuery();
+        query.setTitle(songTitle);
+        query.setArtist(artistName);
+        
+        return query;
+    }
+
+    public YoutubeSearchQuery createYoutubeSearchQueryFromSpotify(SpotifyResponse spotifyResponse) {
+        if (spotifyResponse == null) {
+            return new YoutubeSearchQuery();
+        }
+        
+        // Clean up title and artist name to create an effective search query
+        String songTitle = cleanupTitle(spotifyResponse.getSongTitle());
+        String artistName = spotifyResponse.getArtistName();
+        
+        YoutubeSearchQuery query = new YoutubeSearchQuery();
         query.setTitle(songTitle);
         query.setArtist(artistName);
         
