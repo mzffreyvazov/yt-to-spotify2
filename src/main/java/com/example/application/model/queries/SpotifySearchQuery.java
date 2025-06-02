@@ -28,14 +28,14 @@ public class SpotifySearchQuery {
         
         // Add artist search filter if artist is provided
         if (artist != null && !artist.isEmpty()) {
-            if (query.length() > 0) query.append(" ");
+            if (!query.isEmpty()) query.append(" ");
             String cleanArtist = cleanSearchTerm(artist);
             query.append("artist:").append(cleanArtist);
         }
         
         // Add album search filter if album is provided
         if (album != null && !album.isEmpty()) {
-            if (query.length() > 0) query.append(" ");
+            if (!query.isEmpty()) query.append(" ");
             String cleanAlbum = cleanSearchTerm(album);
             query.append("album:").append(cleanAlbum);
         }
