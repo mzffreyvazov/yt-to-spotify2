@@ -132,9 +132,8 @@ public class MainView extends VerticalLayout {
     }
 
     private void processLink(String link) {
-        resultsLayout.removeAll(); // Clear previous results
+        resultsLayout.removeAll(); 
         
-        // Show loading state
         searchButton.setEnabled(false);
         searchButton.setText("Searching...");
         
@@ -165,7 +164,6 @@ public class MainView extends VerticalLayout {
     }
 
     private void searchSpotifyToYouTube(String spotifyUrl) {
-        // For now, show a message that this feature is not implemented
         webClient.get()
             .uri(uriBuilder -> uriBuilder
                 .path("/api/links/spotify-to-youtube")
@@ -254,11 +252,18 @@ public class MainView extends VerticalLayout {
             this.remove(resultsLayout);
 
             resultsLayout.removeAll(); // Clear previous content
+            if (youtubeToSpotifyMode) {
+                Paragraph errorMessage = new Paragraph("❌ Error processing the link. Please check if it's a valid YouTube URL and try again.");
+                errorMessage.getStyle().set("color", "var(--lumo-error-text-color)");
+                errorMessage.getStyle().set("text-align", "center");
+                resultsLayout.add(errorMessage);
+            } else {
+                Paragraph errorMessage = new Paragraph("❌ Error processing the link. Please check if it's a valid Spotify URL and try again.");
+                errorMessage.getStyle().set("color", "var(--lumo-error-text-color)");
+                errorMessage.getStyle().set("text-align", "center");
+                resultsLayout.add(errorMessage);
+            }
             
-            Paragraph errorMessage = new Paragraph("❌ Error processing the link. Please check if it's a valid YouTube URL and try again.");
-            errorMessage.getStyle().set("color", "var(--lumo-error-text-color)");
-            errorMessage.getStyle().set("text-align", "center");
-            resultsLayout.add(errorMessage);
             
             // Log the error for debugging
             System.err.println("Error processing link: " + error.getMessage());
@@ -270,17 +275,6 @@ public class MainView extends VerticalLayout {
             resetSearchButton();
         }));
     }
-
-    // private void handleAddToPlaylist(SpotifyResponse spotifyResponse) {
-    //     // Implement playlist functionality here
-    //     // For now, just show a notification
-    //     showNotification("Added '" + spotifyResponse.getSongTitle() + "' by " + 
-    //                     spotifyResponse.getArtistName() + " to playlist!", 
-    //                     NotificationVariant.LUMO_SUCCESS);
-        
-    //     // You could implement actual playlist functionality here
-    //     // For example, save to a user's playlist, or create a temporary playlist
-    // }
 
     private void resetSearchButton() {
         searchButton.setEnabled(true);
