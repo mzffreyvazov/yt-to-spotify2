@@ -109,68 +109,66 @@ public class LinkProcessorService {
                 .map(results -> sortResultsByRelevanceSP(results, query));
     }
     
-    /**
-     * Sort and filter results to prioritize the most relevant matches based on objective criteria
-     * This helps avoid personalization bias in search results
-     */
-// Replace the existing sortResultsByRelevanceSP method
-private List<SpotifyResponse> sortResultsByRelevanceSP(List<SpotifyResponse> results, SpotifySearchQuery query) {
-    if (results == null || results.isEmpty()) {
-        return results;
+
+    private List<SpotifyResponse> sortResultsByRelevanceSP(List<SpotifyResponse> results, SpotifySearchQuery query) {
+        if (results == null || results.isEmpty()) {
+            return results;
+        }
+
+        // Create similarity calculators
+        LevenshteinDistance levenshtein = new LevenshteinDistance();
+        JaroWinklerSimilarity jaroWinkler = new JaroWinklerSimilarity();    // Sort by multiple criteria
+        results.sort((a, b) -> {
+            // Calculate combined similarity scores for both results
+            double scoreA = calculateSpotifyRelevanceScore(a, query, levenshtein, jaroWinkler);
+            double scoreB = calculateSpotifyRelevanceScore(b, query, levenshtein, jaroWinkler);
+            
+            // Sort by similarity score (higher score first)
+            return Double.compare(scoreB, scoreA);
+        });
+
+        // Keep only results above certain similarity threshold
+        double threshold = 0.4; // Adjust this value based on testing
+        return results.stream()
+                .filter(result -> {
+                    double similarity = calculateRelevanceScore(
+                        result.getSongTitle().toLowerCase(),
+                        query.getTitle().toLowerCase(),
+                        levenshtein,
+                        jaroWinkler
+                    );
+                    return similarity >= threshold;
+                })
+                .limit(5) // Limit to top 5 most relevant results
+                .toList();
     }
 
-    // Create similarity calculators
-    LevenshteinDistance levenshtein = new LevenshteinDistance();
-    JaroWinklerSimilarity jaroWinkler = new JaroWinklerSimilarity();    // Sort by multiple criteria
-    results.sort((a, b) -> {
-        // Calculate combined similarity scores for both results
-        double scoreA = calculateSpotifyRelevanceScore(a, query, levenshtein, jaroWinkler);
-        double scoreB = calculateSpotifyRelevanceScore(b, query, levenshtein, jaroWinkler);
-        
-        // Sort by similarity score (higher score first)
-        return Double.compare(scoreB, scoreA);
-    });
+    // Add this helper method
+    private double calculateRelevanceScore(String title1, String title2, 
+            LevenshteinDistance levenshtein, JaroWinklerSimilarity jaroWinkler) {
+        // Normalize strings
+        String s1 = normalizeTitle(title1);
+        String s2 = normalizeTitle(title2);
 
-    // Keep only results above certain similarity threshold
-    double threshold = 0.4; // Adjust this value based on testing
-    return results.stream()
-            .filter(result -> {
-                double similarity = calculateRelevanceScore(
-                    result.getSongTitle().toLowerCase(),
-                    query.getTitle().toLowerCase(),
-                    levenshtein,
-                    jaroWinkler
-                );
-                return similarity >= threshold;
-            })
-            .limit(5) // Limit to top 5 most relevant results
-            .toList();
-}
+        // Calculate different similarity metrics
+        double levenshteinSim = 1.0 - ((double) levenshtein.apply(s1, s2) / Math.max(s1.length(), s2.length()));
+        double jaroWinklerSim = jaroWinkler.apply(s1, s2);
 
-// Add this helper method
-private double calculateRelevanceScore(String title1, String title2, 
-        LevenshteinDistance levenshtein, JaroWinklerSimilarity jaroWinkler) {
-    // Normalize strings
-    String s1 = normalizeTitle(title1);
-    String s2 = normalizeTitle(title2);
+        // Combine scores (weighted average)
+        return (levenshteinSim * 0.4) + (jaroWinklerSim * 0.6);
+    }
 
-    // Calculate different similarity metrics
-    double levenshteinSim = 1.0 - ((double) levenshtein.apply(s1, s2) / Math.max(s1.length(), s2.length()));
-    double jaroWinklerSim = jaroWinkler.apply(s1, s2);
+    private String normalizeTitle(String title) {
+        return title.toLowerCase()
+                .replaceAll("\\(.*?\\)", "") // Remove content in parentheses
+                .replaceAll("\\[.*?\\]", "") // Remove content in brackets
+                .replaceAll("ft\\.|feat\\.", "") // Remove featuring artists
+                .replaceAll("official.*video", "") // Remove "official video" etc.
+                .replaceAll("\\s+", " ") // Normalize whitespace
+                .trim();
+    }    
 
-    // Combine scores (weighted average)
-    return (levenshteinSim * 0.4) + (jaroWinklerSim * 0.6);
-}
-
-private String normalizeTitle(String title) {
-    return title.toLowerCase()
-            .replaceAll("\\(.*?\\)", "") // Remove content in parentheses
-            .replaceAll("\\[.*?\\]", "") // Remove content in brackets
-            .replaceAll("ft\\.|feat\\.", "") // Remove featuring artists
-            .replaceAll("official.*video", "") // Remove "official video" etc.
-            .replaceAll("\\s+", " ") // Normalize whitespace
-            .trim();
-}    private List<YoutubeResponse> sortResultsByRelevanceYT(List<YoutubeResponse> results, YoutubeSearchQuery query) {
+    private List<YoutubeResponse> sortResultsByRelevanceYT(List<YoutubeResponse> results, YoutubeSearchQuery query) {
         if (results == null || results.isEmpty()) {
             return results;
         }

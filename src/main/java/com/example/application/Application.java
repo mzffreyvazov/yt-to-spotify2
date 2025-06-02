@@ -11,7 +11,7 @@ public class Application {
 
     @Bean
     public Clock clock() {
-        return Clock.systemDefaultZone(); // You can also use Clock.systemUTC()
+        return Clock.systemDefaultZone(); 
     }
 
     public static void main(String[] args) {
