@@ -2,7 +2,11 @@
 
 This application allows users to convert music links between YouTube and Spotify. Paste a YouTube link to find matching tracks on Spotify, or (in a future version) paste a Spotify link to find the corresponding YouTube video.
 
-## Demo
+## 🚀 Live Demo
+
+**Try it now:** [https://afraid-mariejeanne-mzffreyvazov-db9cf636.koyeb.app](https://afraid-mariejeanne-mzffreyvazov-db9cf636.koyeb.app)
+
+## Video Demo
 https://github.com/user-attachments/assets/73b30c5d-d574-47a2-8cae-de261c4d813f
 
 ## Features
@@ -10,6 +14,7 @@ https://github.com/user-attachments/assets/73b30c5d-d574-47a2-8cae-de261c4d813f
 *   Convert YouTube music video links to Spotify track suggestions.
 *   User-friendly interface built with Vaadin.
 *   (Planned) Convert Spotify tracks to YouTube video links.
+*   **Deployed on Koyeb** - Access from anywhere!
 
 ## Prerequisites
 
@@ -19,6 +24,8 @@ https://github.com/user-attachments/assets/73b30c5d-d574-47a2-8cae-de261c4d813f
 *   YouTube Data API v3 Key
 
 ## Setup
+
+### For Local Development
 
 1.  **Clone the repository:**
     ```bash
@@ -36,7 +43,23 @@ https://github.com/user-attachments/assets/73b30c5d-d574-47a2-8cae-de261c4d813f
         ```
     *   **Important:** Ensure `env.properties` is added to your `.gitignore` file to prevent committing your API keys.
 
-## Running the Application
+### For Production Deployment (Koyeb)
+
+The application is already deployed at: **[https://afraid-mariejeanne-mzffreyvazov-db9cf636.koyeb.app](https://afraid-mariejeanne-mzffreyvazov-db9cf636.koyeb.app)**
+
+To deploy your own instance:
+1. Fork this repository
+2. Connect your GitHub repository to [Koyeb](https://www.koyeb.com/)
+3. Set the following environment variables in Koyeb:
+   - `SPOTIFY_CLIENT_ID`
+   - `SPOTIFY_CLIENT_SECRET`
+   - `YOUTUBE_API_KEY`
+4. Deploy using these settings:
+   - **Build Command**: `./mvnw clean package -Pproduction -DskipTests`
+   - **Run Command**: `java -jar target/yt-to-spotify-1.0-SNAPSHOT.jar`
+   - **Port**: `8080`
+
+## Running the Application Locally
 
 ### Development Mode
 
@@ -73,7 +96,10 @@ The application will be accessible at `http://localhost:8080`.
     *   `env.properties` (you need to create this): For API keys.
 *   `pom.xml`: Maven project configuration.
 
-## Current Status
+## Technologies Used
 
-*   YouTube to Spotify conversion is functional.
-*   Spotify to YouTube conversion is **not yet implemented**.
+- **Backend**: Spring Boot, Java 21
+- **Frontend**: Vaadin Framework
+- **APIs**: Spotify Web API, YouTube Data API v3
+- **Deployment**: Koyeb (Cloud Platform)
+- **Build Tool**: Maven
