@@ -113,7 +113,7 @@ public class MainView extends VerticalLayout {
             spotifyToYoutubeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 
             linkInput.setPlaceholder("Paste YouTube link here...");
-            linkInput.setSuffixComponent(new Icon(VaadinIcon.YOUTUBE));
+            linkInput.setSuffixComponent(new Icon(VaadinIcon.MUSIC));
             searchButton.setText("Find on Spotify");
         } else {
             spotifyToYoutubeButton.removeThemeVariants(ButtonVariant.LUMO_TERTIARY);
