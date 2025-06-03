@@ -87,8 +87,8 @@ The application will be accessible at `http://localhost:8080`.
 
 *   `src/main/java`: Contains the Java source code.
     *   `com.example.application.Application.java`: Main Spring Boot application class.
-    *   `com.example.application.views`: Vaadin UI views.
-    *   `com.example.application.components`: Custom UI components.
+    *   `com.example.application.ui.views`: Vaadin UI views.
+    *   `com.example.application.ui.components`: Custom UI components.
     *   `com.example.application.service`: Business logic and API integrations.
     *   `com.example.application.model`: Data models (request/response objects).
     *   `com.example.application.config`: Application configuration (e.g., WebClient, CORS).

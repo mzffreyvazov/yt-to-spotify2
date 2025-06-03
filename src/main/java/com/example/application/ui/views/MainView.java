@@ -1,6 +1,6 @@
-package com.example.application.views;
+package com.example.application.ui.views;
 
-import com.example.application.components.SongCard;
+import com.example.application.ui.components.SongCard;
 import com.example.application.model.response.SpotifyResponse;
 import com.example.application.model.response.YoutubeResponse;
 import com.vaadin.flow.component.button.Button;

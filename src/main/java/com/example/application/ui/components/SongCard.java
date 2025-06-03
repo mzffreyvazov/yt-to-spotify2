@@ -1,4 +1,4 @@
-package com.example.application.components;
+package com.example.application.ui.components;
 
 import com.example.application.model.response.SpotifyResponse;
 import com.example.application.model.response.YoutubeResponse;
