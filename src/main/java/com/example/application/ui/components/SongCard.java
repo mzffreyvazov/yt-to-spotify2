@@ -72,7 +72,21 @@ public class SongCard extends Div {
         buttonsLayout.setSpacing(true);
         buttonsLayout.setPadding(false);
         buttonsLayout.getStyle().set("margin-top", "var(--lumo-space-s)"); 
+        buttonsLayout.setWidthFull();
 
+        // Add responsive styling for mobile devices
+        buttonsLayout.getElement().getStyle().set("flex-wrap", "wrap");
+        buttonsLayout.getElement().getStyle().set("gap", "var(--lumo-space-xs)");
+
+        // This media query will stack buttons vertically on mobile screens
+        String responsiveStyle = 
+            "@media (max-width: 480px) {" +
+            "  .button-container {" +
+            "    flex-direction: column;" +
+            "  }" +
+            "}";
+        getUI().ifPresent(ui -> ui.getPage().addStyleSheet("data:text/css," + responsiveStyle));
+        buttonsLayout.addClassName("button-container");
         
         VerticalLayout rightPaneLayout = new VerticalLayout(songInfoLayout, buttonsLayout);
         rightPaneLayout.setSpacing(false); 
@@ -184,6 +198,21 @@ public class SongCard extends Div {
         buttonsLayout.setSpacing(true);
         buttonsLayout.setPadding(false);
         buttonsLayout.getStyle().set("margin-top", "var(--lumo-space-s)"); 
+        buttonsLayout.setWidthFull();
+
+        // Add responsive styling for mobile devices
+        buttonsLayout.getElement().getStyle().set("flex-wrap", "wrap");
+        buttonsLayout.getElement().getStyle().set("gap", "var(--lumo-space-xs)");
+
+        // This media query will stack buttons vertically on mobile screens
+        String responsiveStyle = 
+            "@media (max-width: 480px) {" +
+            "  .button-container {" +
+            "    flex-direction: column;" +
+            "  }" +
+            "}";
+        getUI().ifPresent(ui -> ui.getPage().addStyleSheet("data:text/css," + responsiveStyle));
+        buttonsLayout.addClassName("button-container");
 
         VerticalLayout rightPaneLayout = new VerticalLayout(songInfoLayout, buttonsLayout);
         rightPaneLayout.setSpacing(false); 
