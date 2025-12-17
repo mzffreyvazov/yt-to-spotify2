@@ -76,7 +76,19 @@ public class LinkProcessorService {
                         return youtubeService.getYoutubeResponse(titleOnlyQuery);                    }
                     return Mono.just(results);
                 })
-                .map(results -> sortResultsByRelevanceYT(results, query));
+                .map(results -> {
+                    // SIMILARITY ALGORITHM DISABLED - Returning all results in original API order
+                    // List<YoutubeResponse> sorted = sortResultsByRelevanceYT(results, query);
+                    System.out.println("\n========== FINAL RESULTS (Original API Order - No Filtering) ==========");
+                    System.out.println("Total results: " + results.size());
+                    for (int i = 0; i < results.size(); i++) {
+                        YoutubeResponse video = results.get(i);
+                        System.out.println("  " + (i + 1) + ". " + video.getSongTitle() + " - " + video.getArtistName());
+                        System.out.println("     URL: https://www.youtube.com/watch?v=" + video.getVideoId());
+                    }
+                    System.out.println("================================================================\n");
+                    return results;
+                });
     }
 
     
@@ -106,7 +118,19 @@ public class LinkProcessorService {
                         return spotifyService.getSpotifyResponse(titleOnlyQuery);
                     }
                     return Mono.just(results);                })
-                .map(results -> sortResultsByRelevanceSP(results, query));
+                .map(results -> {
+                    // SIMILARITY ALGORITHM DISABLED - Returning all results in original API order
+                    // List<SpotifyResponse> sorted = sortResultsByRelevanceSP(results, query);
+                    System.out.println("\n========== FINAL RESULTS (Original API Order - No Filtering) ==========");
+                    System.out.println("Total results: " + results.size());
+                    for (int i = 0; i < results.size(); i++) {
+                        SpotifyResponse track = results.get(i);
+                        System.out.println("  " + (i + 1) + ". " + track.getSongTitle() + " - " + track.getArtistName());
+                        System.out.println("     URL: " + track.getSpotifyUrl());
+                    }
+                    System.out.println("================================================================\n");
+                    return results;
+                });
     }
     
 

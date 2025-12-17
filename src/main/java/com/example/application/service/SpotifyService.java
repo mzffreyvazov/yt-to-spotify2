@@ -82,30 +82,49 @@ public class SpotifyService {
 
 
     public Mono<List<SpotifyResponse>> getSpotifyResponse(String searchQuery) {
+        System.out.println("\n[Spotify Search] Query: " + searchQuery);
         return getCachedAccessToken().flatMap(token ->
             searchWebClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .queryParam("q", searchQuery)
-                            .queryParam("type", typeUrlParam)
-                            .queryParam("limit", limitUrlParam)
-                            .queryParam("offset", offsetUrlParam)
-                            // Add market parameter to get results available in US market (or any other market)
-                            .queryParam("market", "US")
-                            // Add include_external parameter to include audio features
-                            .queryParam("include_external", "audio")
-                            .build())
+                    .uri(uriBuilder -> {
+                        // Use queryParam for standard parameters
+                        uriBuilder.queryParam("q", searchQuery)
+                                .queryParam("type", typeUrlParam)
+                                .queryParam("limit", limitUrlParam)
+                                .queryParam("offset", offsetUrlParam)
+                                .queryParam("market", "US");
+                                // .queryParam("include_external", "audio");
+                        
+                        // Append locale as raw query string to preserve semicolons and encoded values
+                        String currentQuery = uriBuilder.build().getQuery();
+                        String newQuery = currentQuery + "&locale=en-US,en;q%3D0.9,tr;q%3D0.8";
+                        
+                        return uriBuilder.replaceQuery(newQuery).build();
+                    })
                     .header("Authorization", "Bearer " + token)
                     .retrieve()
                     .bodyToMono(SpotifySearchApiResponse.class)
                     .map(apiResponse -> {
                         if (apiResponse == null || apiResponse.getTracks() == null || apiResponse.getTracks().getItems() == null) {
+                            System.out.println("[Spotify Search] No results found");
                             return Collections.emptyList(); // Return an empty list if no data
                         }
+                        
+                        // Log the tracks.href parameter
+                        System.out.println("[Spotify Search] API Response HREF: " + apiResponse.getTracks().getHref());
+                        
                         // Map the API response to a list of SpotifyResponse objects
-                        return apiResponse.getTracks().getItems().stream()
+                        List<SpotifyResponse> results = apiResponse.getTracks().getItems().stream()
                                 .map(this::mapTrackItemToSpotifyResponse)
                                 .filter(item -> item != null) // Filter out any null responses
                                 .collect(Collectors.toList());
+                        
+                        System.out.println("[Spotify Search] Found " + results.size() + " tracks:");
+                        for (int i = 0; i < results.size() && i < 10; i++) {
+                            SpotifyResponse track = results.get(i);
+                            System.out.println("  " + (i + 1) + ". " + track.getSongTitle() + " - " + track.getArtistName());
+                            System.out.println("     URL: " + track.getSpotifyUrl());
+                        }
+                        return results;
                     })
         );
     }

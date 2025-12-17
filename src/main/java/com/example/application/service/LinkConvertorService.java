@@ -113,6 +113,14 @@ public class LinkConvertorService {
         String songTitle = cleanupTitle(ytResponse.getSongTitle());
         String artistName = cleanupArtist(ytResponse.getArtistName());
         
+        System.out.println("\n========== YOUTUBE TO SPOTIFY CONVERSION ==========");
+        System.out.println("YouTube video detected:");
+        System.out.println("  Original Title: " + ytResponse.getSongTitle());
+        System.out.println("  Original Artist: " + ytResponse.getArtistName());
+        System.out.println("  Cleaned Title: " + songTitle);
+        System.out.println("  Cleaned Artist: " + artistName);
+        System.out.println("====================================================\n");
+        
         SpotifySearchQuery query = new SpotifySearchQuery();
         query.setTitle(songTitle);
         query.setArtist(artistName);
@@ -128,6 +136,14 @@ public class LinkConvertorService {
         // Clean up title and artist name to create an effective search query
         String songTitle = cleanupTitle(spotifyResponse.getSongTitle());
         String artistName = spotifyResponse.getArtistName();
+        
+        System.out.println("\n========== SPOTIFY TO YOUTUBE CONVERSION ==========");
+        System.out.println("Spotify track detected:");
+        System.out.println("  Track Title: " + spotifyResponse.getSongTitle());
+        System.out.println("  Artist: " + spotifyResponse.getArtistName());
+        System.out.println("  Spotify URL: " + spotifyResponse.getSpotifyUrl());
+        System.out.println("  Cleaned Title: " + songTitle);
+        System.out.println("====================================================\n");
         
         YoutubeSearchQuery query = new YoutubeSearchQuery();
         query.setTitle(songTitle);

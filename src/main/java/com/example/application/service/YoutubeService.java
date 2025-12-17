@@ -44,6 +44,7 @@ public class YoutubeService {
     }
 
     public Mono<List<YoutubeResponse>> getYoutubeResponse(String searchQuery) {
+        System.out.println("\n[YouTube Search] Query: " + searchQuery);
         
         return searchWebClientYt.get()
                 .uri(uriBuilder -> uriBuilder
@@ -59,14 +60,23 @@ public class YoutubeService {
                 .bodyToMono(YouTubeSearchApiResponse.class)
                 .map(apiResponse -> {
                     if (apiResponse == null || apiResponse.getItems() == null) {
+                        System.out.println("[YouTube Search] No results found");
                         return Collections.emptyList(); // Return an empty list if no data
                     }
                     // Map the API response to a list of YoutubeResponse objects
-                    return apiResponse.getItems().stream()
+                    List<YoutubeResponse> results = apiResponse.getItems().stream()
                         .filter(item -> item.getId() != null && "youtube#video".equals(item.getId().getKind()))
                         .map(this::mapSearchItemToYoutubeResponse)
                         .filter(Objects::nonNull) // Filter out any null responses
                         .collect((Collectors.toList()));
+                    
+                    System.out.println("[YouTube Search] Found " + results.size() + " videos:");
+                    for (int i = 0; i < results.size() && i < 10; i++) {
+                        YoutubeResponse video = results.get(i);
+                        System.out.println("  " + (i + 1) + ". " + video.getSongTitle() + " - " + video.getArtistName());
+                        System.out.println("     URL: https://www.youtube.com/watch?v=" + video.getVideoId());
+                    }
+                    return results;
                 });
     }   
 

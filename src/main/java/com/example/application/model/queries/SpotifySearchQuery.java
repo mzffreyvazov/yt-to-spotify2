@@ -15,32 +15,36 @@ public class SpotifySearchQuery {
     /**
      * Creates a query string for Spotify search API using Spotify's advanced search syntax
      * Reference: Spotify uses format like "track:song_name artist:artist_name"
+     * Field filters: track, artist, album, year, genre, isrc for track searches
      */
     public String toQueryString() {
         StringBuilder query = new StringBuilder();
         
         // Add track search filter if title is provided
         if (title != null && !title.isEmpty()) {
-            // Clean up the title for search purposes
             String cleanTitle = cleanSearchTerm(title);
-            query.append(cleanTitle);
+            query.append("track:").append(cleanTitle);
         }
         
         // Add artist search filter if artist is provided
         if (artist != null && !artist.isEmpty()) {
             if (!query.isEmpty()) query.append(" ");
             String cleanArtist = cleanSearchTerm(artist);
-            query.append("").append(cleanArtist);
+            query.append("artist:").append(cleanArtist);
         }
         
         // Add album search filter if album is provided
         if (album != null && !album.isEmpty()) {
             if (!query.isEmpty()) query.append(" ");
             String cleanAlbum = cleanSearchTerm(album);
-            query.append("").append(cleanAlbum);
+            query.append("album:").append(cleanAlbum);
         }
         
-        return query.toString();
+        String result = query.toString();
+        System.out.println("[Spotify Query Generator] toQueryString() generated: \"" + result + "\"");
+        System.out.println("  - From Title: \"" + title + "\"");
+        System.out.println("  - From Artist: \"" + artist + "\"");
+        return result;
     }
     
     /**
@@ -85,6 +89,8 @@ public class SpotifySearchQuery {
             query.append(cleanSearchTerm(artist));
         }
         
-        return query.toString();
+        String result = query.toString();
+        System.out.println("[Spotify Query Generator] toGeneralQueryString() generated: \"" + result + "\"");
+        return result;
     }
 }
