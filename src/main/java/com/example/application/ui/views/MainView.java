@@ -5,6 +5,7 @@ import com.example.application.model.response.SpotifyResponse;
 import com.example.application.model.response.YoutubeResponse;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.icon.Icon;
@@ -14,6 +15,7 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import org.springframework.core.ParameterizedTypeReference;
@@ -104,6 +106,13 @@ public class MainView extends VerticalLayout {
         resultsLayout.setAlignItems(Alignment.STRETCH); 
 
         add(title, description, modeButtonsLayout, linkInput, searchButton, resultsLayout);
+    }
+    
+    @Override
+    protected void onAttach(AttachEvent attachEvent) {
+        super.onAttach(attachEvent);
+        // Show first-time notification after component is attached to UI
+        showFirstTimeNotification();
     }
     
     private void updateUIMode() {
@@ -287,5 +296,52 @@ public class MainView extends VerticalLayout {
     private void showNotification(String message, NotificationVariant variant) {
         Notification notification = Notification.show(message, 2000, Notification.Position.TOP_CENTER);
         notification.addThemeVariants(variant);
+    }
+    
+    private void showFirstTimeNotification() {
+        getUI().ifPresent(ui -> {
+            // Check if the notification has been shown before using localStorage
+            ui.getPage().executeJs(
+                "return localStorage.getItem('firstTimeNotificationShown') === 'true';"
+            ).then(Boolean.class, hasBeenShown -> {
+                if (!hasBeenShown) {
+                    // Create notification content
+                    Div content = new Div();
+                    
+                    Icon infoIcon = new Icon(VaadinIcon.INFO_CIRCLE);
+                    infoIcon.getStyle().set("margin-right", "var(--lumo-space-s)");
+                    
+                    Paragraph message = new Paragraph("⚠️ This project is deployed with Koyeb on a hobby plan, so it may work slow due to the low resources.");
+                    message.getStyle().set("margin", "0");
+                    
+                    Button closeButton = new Button("Got it", new Icon(VaadinIcon.CHECK));
+                    closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_CONTRAST);
+                    closeButton.getStyle().set("margin-left", "var(--lumo-space-m)");
+                    
+                    HorizontalLayout notificationLayout = new HorizontalLayout(infoIcon, message, closeButton);
+                    notificationLayout.setAlignItems(Alignment.CENTER);
+                    notificationLayout.setSpacing(true);
+                    
+                    content.add(notificationLayout);
+                    
+                    // Create the notification
+                    Notification notification = new Notification(content);
+                    notification.setDuration(0); // Make it persistent until closed
+                    notification.setPosition(Notification.Position.TOP_CENTER);
+                    notification.addThemeVariants(NotificationVariant.LUMO_PRIMARY);
+                    
+                    // Close button functionality
+                    closeButton.addClickListener(event -> {
+                        notification.close();
+                        // Mark as shown in localStorage
+                        ui.getPage().executeJs(
+                            "localStorage.setItem('firstTimeNotificationShown', 'true');"
+                        );
+                    });
+                    
+                    notification.open();
+                }
+            });
+        });
     }
 }
