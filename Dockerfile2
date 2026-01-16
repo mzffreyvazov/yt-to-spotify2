@@ -2,6 +2,15 @@
 FROM eclipse-temurin:21-jdk AS build
 WORKDIR /app
 
+# Install Node.js (required for Vaadin frontend build)
+RUN apt-get update && \
+    apt-get install -y curl && \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    npm install -g npm@latest && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 # Copy Maven wrapper and pom.xml first for better caching
 COPY mvnw mvnw.cmd pom.xml ./
 COPY .mvn .mvn
@@ -11,6 +20,9 @@ RUN chmod +x ./mvnw
 
 # Download dependencies (this layer will be cached if pom.xml doesn't change)
 RUN ./mvnw dependency:go-offline -B
+
+# Copy package.json for frontend dependencies
+COPY package.json package-lock.json* ./
 
 # Copy source code
 COPY src ./src
