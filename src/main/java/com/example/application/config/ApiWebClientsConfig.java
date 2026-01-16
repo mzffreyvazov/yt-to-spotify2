@@ -1,31 +1,24 @@
 package com.example.application.config;
 
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
 
 @Configuration
 public class ApiWebClientsConfig {
-    
-    @Value("${api.search.base-url}")
-    private String searchBaseUrlSpotify;
 
-    @Value("${api.track.base-url}")
-    private String trackBaseUrlSpotify;
+    private final ApiProperties apiProperties;
 
-    @Value("${api.search.base-url.youtube}")
-    private String searchBaseUrlYoutube;
-
-    @Value("${api.track.base-url.youtube}")
-    private String trackBaseUrlYoutube;        
+    public ApiWebClientsConfig(ApiProperties apiProperties) {
+        this.apiProperties = apiProperties;
+    }
 
     @Bean
     @Qualifier("searchWebClientSpotify") 
     public WebClient searchWebClient(WebClient.Builder webClientBuilder) {
         return webClientBuilder
-                .baseUrl(searchBaseUrlSpotify)
+                .baseUrl(apiProperties.getSpotify().getSearchBaseUrl())
                 .build();
     }
 
@@ -33,14 +26,14 @@ public class ApiWebClientsConfig {
     @Qualifier("trackWebClientSpotify") 
     public WebClient trackWebClient(WebClient.Builder webClientBuilder) {
         return webClientBuilder
-                .baseUrl(trackBaseUrlSpotify)
+                .baseUrl(apiProperties.getSpotify().getTrackBaseUrl())
                 .build();
     }
     @Bean
     @Qualifier("searchWebClientYoutube") 
     public WebClient searchWebClientYt(WebClient.Builder webClientBuilder) {
         return webClientBuilder
-                .baseUrl(searchBaseUrlYoutube)
+                .baseUrl(apiProperties.getYoutube().getSearchBaseUrl())
                 .build();
     }
 
@@ -48,7 +41,7 @@ public class ApiWebClientsConfig {
     @Qualifier("trackWebClientYoutube") 
     public WebClient trackWebClientYt(WebClient.Builder webClientBuilder) {
         return webClientBuilder
-                .baseUrl(trackBaseUrlYoutube)
+                .baseUrl(apiProperties.getYoutube().getTrackBaseUrl())
                 .build();
     }
 

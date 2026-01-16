@@ -6,10 +6,10 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import com.example.application.config.YoutubeProperties;
 import com.example.application.model.response.YoutubeResponse;
 import com.example.application.model.youtube_dto.SearchItem;
 import com.example.application.model.youtube_dto.VideoItem;
@@ -20,13 +20,12 @@ import reactor.core.publisher.Mono;
 
 @Service
 public class YoutubeService {
-    
-    @Value("${YOUTUBE_API_KEY}")
-    private String YT_API_KEY;
+
+    private final YoutubeProperties youtubeProperties;
 
     // injecting web client
-    private WebClient searchWebClientYt;
-    private WebClient trackWebClientYt;
+    private final WebClient searchWebClientYt;
+    private final WebClient trackWebClientYt;
 
 
     // api parameters
@@ -37,19 +36,22 @@ public class YoutubeService {
 
 
     public YoutubeService(@Qualifier("searchWebClientYoutube") WebClient searchWebClient,
-                          @Qualifier("trackWebClientYoutube") WebClient trackWebClient) {
+                          @Qualifier("trackWebClientYoutube") WebClient trackWebClient,
+                          YoutubeProperties youtubeProperties) {
         this.searchWebClientYt = searchWebClient;
         this.trackWebClientYt = trackWebClient; // Assuming you want to use the search WebClient for YouTube searches
+        this.youtubeProperties = youtubeProperties;
 
     }
 
     public Mono<List<YoutubeResponse>> getYoutubeResponse(String searchQuery) {
+        String apiKey = youtubeProperties.getApiKey();
         System.out.println("\n[YouTube Search] Query: " + searchQuery);
         
         return searchWebClientYt.get()
                 .uri(uriBuilder -> uriBuilder
                         // .path(baseUrl)
-                        .queryParam("key", YT_API_KEY)
+                .queryParam("key", apiKey)
                         .queryParam("q", searchQuery)
                         .queryParam("part", partUrlParam)
                         .queryParam("type", typeUrlParam)
@@ -81,9 +83,10 @@ public class YoutubeService {
     }   
 
     public Mono<YoutubeResponse> getSingleVideo(String videoId) {
+        String apiKey = youtubeProperties.getApiKey();
         return trackWebClientYt.get()
                 .uri(uriBuilder -> uriBuilder
-                        .queryParam("key", YT_API_KEY)
+                .queryParam("key", apiKey)
                         .queryParam("id", videoId)
                         .queryParam("part", "snippet,contentDetails,statistics")  // Request additional parts
                         .build())

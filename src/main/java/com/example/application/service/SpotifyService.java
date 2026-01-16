@@ -6,11 +6,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import com.example.application.config.SpotifyProperties;
 import com.example.application.model.response.SpotifyResponse;
 import com.example.application.model.spotify_dto.SpotifySearchApiResponse;
 import com.example.application.model.spotify_dto.TrackItem;
@@ -20,18 +20,9 @@ import reactor.core.publisher.Mono;
 @Service
 public class SpotifyService {
 
-    @Value("${SPOTIFY_CLIENT_SECRET}")
-    private String SPOTIFY_CLIENT_SECRET;
-
-    @Value("${SPOTIFY_CLIENT_ID}")
-    private String SPOTIFY_CLIENT_ID;
-    
-    @Value("${SPOTIFY_AUTH_URL}")
-    private String SPOTIFY_AUTH_URL;
-
-
-    private WebClient searchWebClient;
-    private WebClient trackWebClient;
+    private final SpotifyProperties spotifyProperties;
+    private final WebClient searchWebClient;
+    private final WebClient trackWebClient;
     private Mono<String> accessTokenMono;
 
     // api parameters
@@ -40,9 +31,11 @@ public class SpotifyService {
     private static final int offsetUrlParam = 0;
 
     public SpotifyService(@Qualifier("searchWebClient") WebClient searchWebClient,
-                          @Qualifier("trackWebClient") WebClient trackWebClient) {
+                          @Qualifier("trackWebClient") WebClient trackWebClient,
+                          SpotifyProperties spotifyProperties) {
         this.searchWebClient = searchWebClient;
         this.trackWebClient = trackWebClient;
+        this.spotifyProperties = spotifyProperties;
     }
 
     private Mono<String> getCachedAccessToken() {
@@ -54,22 +47,26 @@ public class SpotifyService {
     }
 
     private Mono<String> getAccessToken() {
-        // For debugging, you can add a log here to check the values:
-        System.out.println("SPOTIFY_AUTH_URL: " + SPOTIFY_AUTH_URL);
-        System.out.println("SPOTIFY_CLIENT_ID: " + SPOTIFY_CLIENT_ID);
-        System.out.println("SPOTIFY_CLIENT_SECRET: " + SPOTIFY_CLIENT_SECRET);
+        String authUrl = spotifyProperties.getAuthUrl();
+        String clientId = spotifyProperties.getClientId();
+        String clientSecret = spotifyProperties.getClientSecret();
 
-        if (SPOTIFY_CLIENT_ID == null || SPOTIFY_CLIENT_SECRET == null || SPOTIFY_AUTH_URL == null) {
+        // For debugging, you can add a log here to check the values:
+        System.out.println("SPOTIFY_AUTH_URL: " + authUrl);
+        System.out.println("SPOTIFY_CLIENT_ID: " + clientId);
+        System.out.println("SPOTIFY_CLIENT_SECRET: " + clientSecret);
+
+        if (clientId == null || clientSecret == null || authUrl == null) {
             return Mono.error(new IllegalStateException("Spotify client credentials or auth URL not configured."));
         }
 
         String authHeader = "Basic " + Base64.getEncoder().encodeToString(
-            (SPOTIFY_CLIENT_ID + ":" + SPOTIFY_CLIENT_SECRET).getBytes()
+            (clientId + ":" + clientSecret).getBytes()
         );
 
         return WebClient.builder().build() 
                 .post()
-                .uri(SPOTIFY_AUTH_URL) 
+                .uri(authUrl) 
                 .header("Authorization", authHeader)
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .bodyValue("grant_type=client_credentials")
