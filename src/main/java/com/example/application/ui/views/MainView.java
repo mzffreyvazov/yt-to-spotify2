@@ -20,7 +20,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.client.RestClient;
 import java.util.List;
 
 
@@ -33,15 +33,15 @@ public class MainView extends VerticalLayout {
     private VerticalLayout resultsLayout;
     private Button youtubeToSpotifyButton;
     private Button spotifyToYoutubeButton;
-    private WebClient webClient;
+    private RestClient restClient;
 
     private boolean youtubeToSpotifyMode = true; // true for YouTube to Spotify, false for Spotify to YouTube
 
     public MainView() {
         String baseUrl = System.getProperty("app.base.url", "http://localhost:8080");
 
-        // Initialize WebClient to call your REST endpoints
-        this.webClient = WebClient.builder()
+        // Initialize RestClient to call your REST endpoints
+        this.restClient = RestClient.builder()
             .baseUrl(baseUrl) // Adjust port if different
             .build();
             
@@ -157,33 +157,35 @@ public class MainView extends VerticalLayout {
     }
 
     private void searchYouTubeToSpotify(String youtubeUrl) {
-        webClient.get()
-            .uri(uriBuilder -> uriBuilder
-                .path("/api/links/youtube-to-spotify-tracks")
-                .queryParam("youtubeUrl", youtubeUrl)
-                .build())
-            .accept(MediaType.APPLICATION_JSON)
-            .retrieve()
-            .bodyToMono(new ParameterizedTypeReference<List<SpotifyResponse>>() {})
-            .subscribe(
-                this::displaySpotifyResults,
-                this::handleError
-            );
+        try {
+            List<SpotifyResponse> results = restClient.get()
+                .uri(uriBuilder -> uriBuilder
+                    .path("/api/links/youtube-to-spotify-tracks")
+                    .queryParam("youtubeUrl", youtubeUrl)
+                    .build())
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .body(new ParameterizedTypeReference<List<SpotifyResponse>>() {});
+            displaySpotifyResults(results);
+        } catch (Exception e) {
+            handleError(e);
+        }
     }
 
     private void searchSpotifyToYouTube(String spotifyUrl) {
-        webClient.get()
-            .uri(uriBuilder -> uriBuilder
-                .path("/api/links/spotify-to-youtube")
-                .queryParam("spotifyUrl", spotifyUrl)
-                .build())
-            .accept(MediaType.APPLICATION_JSON)
-            .retrieve()
-            .bodyToMono(new ParameterizedTypeReference<List<YoutubeResponse>>() {})
-            .subscribe(
-                this::displayYoutubeResults,
-                this::handleError
-            );
+        try {
+            List<YoutubeResponse> results = restClient.get()
+                .uri(uriBuilder -> uriBuilder
+                    .path("/api/links/spotify-to-youtube")
+                    .queryParam("spotifyUrl", spotifyUrl)
+                    .build())
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .body(new ParameterizedTypeReference<List<YoutubeResponse>>() {});
+            displayYoutubeResults(results);
+        } catch (Exception e) {
+            handleError(e);
+        }
     }
 
     private void displaySpotifyResults(List<SpotifyResponse> spotifyTracks) {

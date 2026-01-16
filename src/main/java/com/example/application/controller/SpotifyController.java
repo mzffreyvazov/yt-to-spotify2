@@ -6,8 +6,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.application.model.response.SpotifyResponse;
 import com.example.application.service.SpotifyService;
 
-import reactor.core.publisher.Mono;
-
 import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,12 +22,12 @@ public class SpotifyController {
     }
 
     @GetMapping("/search")
-    public Mono<List<SpotifyResponse>> getMethodName(@RequestParam String query) {
+    public List<SpotifyResponse> getMethodName(@RequestParam String query) {
         return spotifyService.getSpotifyResponse(query); 
     }
     
     @GetMapping("/search/track")
-    public Mono<SpotifyResponse> getTrack(@RequestParam String trackId) {
+    public SpotifyResponse getTrack(@RequestParam String trackId) {
         return spotifyService.getSingleTrack(trackId); 
     }
     

@@ -3,7 +3,7 @@ package com.example.application.config;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.client.RestClient;
 
 @Configuration
 public class ApiWebClientsConfig {
@@ -16,31 +16,32 @@ public class ApiWebClientsConfig {
 
     @Bean
     @Qualifier("searchWebClientSpotify") 
-    public WebClient searchWebClient(WebClient.Builder webClientBuilder) {
-        return webClientBuilder
+    public RestClient searchWebClient() {
+        return RestClient.builder()
                 .baseUrl(apiProperties.getSpotify().getSearchBaseUrl())
                 .build();
     }
 
     @Bean
     @Qualifier("trackWebClientSpotify") 
-    public WebClient trackWebClient(WebClient.Builder webClientBuilder) {
-        return webClientBuilder
+    public RestClient trackWebClient() {
+        return RestClient.builder()
                 .baseUrl(apiProperties.getSpotify().getTrackBaseUrl())
                 .build();
     }
+    
     @Bean
     @Qualifier("searchWebClientYoutube") 
-    public WebClient searchWebClientYt(WebClient.Builder webClientBuilder) {
-        return webClientBuilder
+    public RestClient searchWebClientYt() {
+        return RestClient.builder()
                 .baseUrl(apiProperties.getYoutube().getSearchBaseUrl())
                 .build();
     }
 
     @Bean
     @Qualifier("trackWebClientYoutube") 
-    public WebClient trackWebClientYt(WebClient.Builder webClientBuilder) {
-        return webClientBuilder
+    public RestClient trackWebClientYt() {
+        return RestClient.builder()
                 .baseUrl(apiProperties.getYoutube().getTrackBaseUrl())
                 .build();
     }

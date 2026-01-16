@@ -7,7 +7,6 @@ import com.example.application.model.response.YoutubeResponse;
 import com.example.application.model.queries.SpotifySearchQuery;
 import com.example.application.model.queries.YoutubeSearchQuery;
 
-import reactor.core.publisher.Mono;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -79,26 +78,26 @@ public class LinkConvertorService {
     /**
      * Converts a YouTube link to a Spotify search query
      */
-    public Mono<SpotifySearchQuery> youtubeToSpotifyQuery(String youtubeUrl) {
+    public SpotifySearchQuery youtubeToSpotifyQuery(String youtubeUrl) {
         String videoId = extractYoutubeId(youtubeUrl);
         if (videoId == null) {
-            return Mono.error(new IllegalArgumentException("Invalid YouTube URL: " + youtubeUrl));
+            throw new IllegalArgumentException("Invalid YouTube URL: " + youtubeUrl);
         }
         
-        return youtubeService.getSingleVideo(videoId)
-                .map(this::createSpotifyQueryFromYoutubeResponse);
+        YoutubeResponse ytResponse = youtubeService.getSingleVideo(videoId);
+        return createSpotifyQueryFromYoutubeResponse(ytResponse);
     }
 
-    public Mono<YoutubeSearchQuery> spotifyToYoutubeQuery(String spotifyUrl) {
+    public YoutubeSearchQuery spotifyToYoutubeQuery(String spotifyUrl) {
         String trackId = extractSpotifyId(spotifyUrl);
         if (trackId == null) {
-            return Mono.error(new IllegalArgumentException("Invalid Spotify URL: " + spotifyUrl));
+            throw new IllegalArgumentException("Invalid Spotify URL: " + spotifyUrl);
         }
         
         // Here you would implement logic to convert Spotify track ID to a YouTube search query
         // This is a placeholder as the actual implementation depends on your requirements
-        return this.spotifyService.getSingleTrack(trackId)
-                .map(this::createYoutubeSearchQueryFromSpotify);
+        SpotifyResponse spotifyResponse = this.spotifyService.getSingleTrack(trackId);
+        return createYoutubeSearchQueryFromSpotify(spotifyResponse);
     }
     
     /**

@@ -8,8 +8,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.application.model.response.YoutubeResponse;
 import com.example.application.service.YoutubeService;
 
-import reactor.core.publisher.Mono;
-
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -25,13 +23,13 @@ public class YoutubeController {
     }
 
     @GetMapping("/search")
-    public Mono<List<YoutubeResponse>> searchVideos(@RequestParam String query) {
+    public List<YoutubeResponse> searchVideos(@RequestParam String query) {
 
         return youtubeService.getYoutubeResponse(query);
     }
 
     @GetMapping("/video")
-    public Mono<YoutubeResponse> getVideo(@RequestParam String videoId) {
+    public YoutubeResponse getVideo(@RequestParam String videoId) {
         return youtubeService.getSingleVideo(videoId);
     }
     
