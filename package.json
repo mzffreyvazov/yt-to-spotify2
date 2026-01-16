@@ -143,5 +143,11 @@
     "@vaadin/router": "2.0.1",
     "@vaadin/vertical-layout": "25.0.2",
     "@vaadin/virtual-list": "25.0.2"
+  },
+  "scripts": {
+    "heroku-postbuild": "sh mvnw clean package -Pproduction -DskipTests"
+  },
+  "engines": {
+    "node": "20.x"
   }
 }
