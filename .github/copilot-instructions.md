@@ -4,6 +4,11 @@
 
 A Spring Boot 4.0 + Vaadin 24 application that converts music links between YouTube and Spotify. Users paste a YouTube link to find matching Spotify tracks (or vice versa).
 
+## AI Change Logs
+
+- `.documentation/ai-logs` holds the latest changes to the project.
+- This folder is useful context for both project maintenance and AI agents.
+
 ## NEVER EVER DO
 
 These rules are ABSOLUTE:
