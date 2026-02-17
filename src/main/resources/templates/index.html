@@ -53,6 +53,8 @@
             display: inline-flex;
             gap: 8px;
             margin-bottom: 14px;
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
         .mode-btn {
@@ -134,6 +136,32 @@
             font-weight: 700;
             margin: 0 0 12px;
             color: #111827;
+        }
+
+        .split-results {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .split-column {
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .split-title {
+            margin: 0 0 10px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .split-empty {
+            margin: 0;
+            color: #6b7280;
+            font-size: 0.9rem;
         }
 
         .card {
@@ -274,6 +302,10 @@
                 align-items: flex-start;
             }
 
+            .split-results {
+                grid-template-columns: 1fr;
+            }
+
             .notice {
                 flex-direction: column;
             }
@@ -290,16 +322,17 @@
     <h1>Convert Music Links</h1>
     <p class="description">
         Transform your favorite music between YouTube and Spotify with a single click.
-        Just paste the link and we'll find the closest matches.
+        Paste a link or type keywords and we'll find the closest matches.
     </p>
 
     <div class="mode-switch">
         <button id="youtubeModeBtn" class="mode-btn active" type="button">🎵 YouTube to Spotify</button>
         <button id="spotifyModeBtn" class="mode-btn" type="button">🎵 Spotify to YouTube</button>
+        <button id="simpleSearchModeBtn" class="mode-btn" type="button">🔎 Simple Search</button>
     </div>
 
     <div class="input-wrap">
-        <input id="linkInput" class="link-input" type="text" placeholder="Paste YouTube link here..."/>
+        <input id="linkInput" class="link-input" type="text" placeholder="Paste YouTube link or type keywords"/>
         <span class="input-icon">🎵</span>
     </div>
 
@@ -319,11 +352,12 @@
     const searchBtn = document.getElementById("searchBtn");
     const youtubeModeBtn = document.getElementById("youtubeModeBtn");
     const spotifyModeBtn = document.getElementById("spotifyModeBtn");
+    const simpleSearchModeBtn = document.getElementById("simpleSearchModeBtn");
 
     const koyebNotice = document.getElementById("koyebNotice");
     const dismissNotice = document.getElementById("dismissNotice");
 
-    let youtubeToSpotifyMode = true;
+    let mode = "YOUTUBE_TO_SPOTIFY";
 
     function escapeHtml(value) {
         return String(value ?? "")
@@ -334,17 +368,42 @@
             .replaceAll("'", "&#39;");
     }
 
-    function setMode(isYoutubeToSpotify) {
-        youtubeToSpotifyMode = isYoutubeToSpotify;
-        youtubeModeBtn.classList.toggle("active", isYoutubeToSpotify);
-        spotifyModeBtn.classList.toggle("active", !isYoutubeToSpotify);
-        linkInput.placeholder = isYoutubeToSpotify ? "Paste YouTube link here..." : "Paste Spotify link here...";
-        searchBtn.textContent = isYoutubeToSpotify ? "🔎 Find on Spotify" : "🔎 Find on YouTube";
+    function setMode(nextMode) {
+        mode = nextMode;
+        youtubeModeBtn.classList.toggle("active", mode === "YOUTUBE_TO_SPOTIFY");
+        spotifyModeBtn.classList.toggle("active", mode === "SPOTIFY_TO_YOUTUBE");
+        simpleSearchModeBtn.classList.toggle("active", mode === "SIMPLE_SEARCH");
+
+        if (mode === "YOUTUBE_TO_SPOTIFY") {
+            linkInput.placeholder = "Paste YouTube link or type keywords";
+            searchBtn.textContent = "🔎 Find on Spotify";
+            return;
+        }
+
+        if (mode === "SPOTIFY_TO_YOUTUBE") {
+            linkInput.placeholder = "Paste YouTube link or type keywords";
+            searchBtn.textContent = "🔎 Find on YouTube";
+            return;
+        }
+
+        linkInput.placeholder = "Type keywords or other things";
+        searchBtn.textContent = "🔎 Search Spotify + YouTube";
     }
 
     function setLoading(loading) {
         searchBtn.disabled = loading;
-        searchBtn.textContent = loading ? "Searching..." : (youtubeToSpotifyMode ? "🔎 Find on Spotify" : "🔎 Find on YouTube");
+        if (loading) {
+            searchBtn.textContent = "Searching...";
+            return;
+        }
+
+        if (mode === "YOUTUBE_TO_SPOTIFY") {
+            searchBtn.textContent = "🔎 Find on Spotify";
+        } else if (mode === "SPOTIFY_TO_YOUTUBE") {
+            searchBtn.textContent = "🔎 Find on YouTube";
+        } else {
+            searchBtn.textContent = "🔎 Search Spotify + YouTube";
+        }
     }
 
     function showMessage(message, type) {
@@ -391,36 +450,76 @@
         `;
     }
 
+    function renderSimpleSearchResults(payload) {
+        const spotifyItems = Array.isArray(payload?.spotifyResults) ? payload.spotifyResults : [];
+        const youtubeItems = Array.isArray(payload?.youtubeResults) ? payload.youtubeResults : [];
+
+        if (spotifyItems.length === 0 && youtubeItems.length === 0) {
+            showMessage("No results found on Spotify or YouTube. Try different keywords.", "success");
+            return;
+        }
+
+        const spotifyCards = spotifyItems.length > 0
+            ? spotifyItems.map(createSpotifyCard).join("")
+            : '<p class="split-empty">No Spotify results.</p>';
+        const youtubeCards = youtubeItems.length > 0
+            ? youtubeItems.map(createYoutubeCard).join("")
+            : '<p class="split-empty">No YouTube results.</p>';
+
+        const header = `<p class="results-header">Simple search results for "${escapeHtml(payload?.query || "")}"</p>`;
+        resultsEl.innerHTML = `
+            ${header}
+            <div class="split-results">
+                <div class="split-column">
+                    <p class="split-title">Spotify (${spotifyItems.length})</p>
+                    ${spotifyCards}
+                </div>
+                <div class="split-column">
+                    <p class="split-title">YouTube (${youtubeItems.length})</p>
+                    ${youtubeCards}
+                </div>
+            </div>
+        `;
+    }
+
     function renderResults(items) {
         if (!Array.isArray(items) || items.length === 0) {
-            const emptyMessage = youtubeToSpotifyMode
-                ? "No matching tracks found. Try a different link or check if the video is a music track."
-                : "No matching videos found. Try a different link or check if the video is a music video.";
+            const emptyMessage = mode === "YOUTUBE_TO_SPOTIFY"
+                ? "No matching tracks found. Try another link or different keywords."
+                : "No matching videos found. Try another link or different keywords.";
             showMessage(emptyMessage, "success");
             return;
         }
 
-        const itemWord = youtubeToSpotifyMode ? "track" : "video";
+        const itemWord = mode === "YOUTUBE_TO_SPOTIFY" ? "track" : "video";
         const header = `<p class="results-header">Found ${items.length} matching ${itemWord}${items.length === 1 ? "" : "s"}:</p>`;
         const cards = items
-            .map(item => youtubeToSpotifyMode ? createSpotifyCard(item) : createYoutubeCard(item))
+            .map(item => mode === "YOUTUBE_TO_SPOTIFY" ? createSpotifyCard(item) : createYoutubeCard(item))
             .join("");
         resultsEl.innerHTML = `${header}${cards}`;
     }
 
     async function processLink() {
-        const link = (linkInput.value || "").trim();
-        if (!link) {
-            showMessage("Please enter a valid link", "error");
+        const input = (linkInput.value || "").trim();
+        if (!input) {
+            const message = mode === "SIMPLE_SEARCH"
+                ? "Please enter keywords to search"
+                : "Please enter a link or keywords";
+            showMessage(message, "error");
             return;
         }
 
         setLoading(true);
         showMessage("🔍 Searching for matches...", "loading");
 
-        const endpoint = youtubeToSpotifyMode
-            ? `/api/links/youtube-to-spotify-tracks?youtubeUrl=${encodeURIComponent(link)}`
-            : `/api/links/spotify-to-youtube?spotifyUrl=${encodeURIComponent(link)}`;
+        let endpoint;
+        if (mode === "YOUTUBE_TO_SPOTIFY") {
+            endpoint = `/api/links/youtube-to-spotify-tracks?youtubeUrl=${encodeURIComponent(input)}`;
+        } else if (mode === "SPOTIFY_TO_YOUTUBE") {
+            endpoint = `/api/links/spotify-to-youtube?spotifyUrl=${encodeURIComponent(input)}`;
+        } else {
+            endpoint = `/api/links/simple-search?query=${encodeURIComponent(input)}`;
+        }
 
         try {
             const response = await fetch(endpoint, {
@@ -433,11 +532,20 @@
             }
 
             const results = await response.json();
-            renderResults(results);
+            if (mode === "SIMPLE_SEARCH") {
+                renderSimpleSearchResults(results);
+            } else {
+                renderResults(results);
+            }
         } catch (error) {
-            const message = youtubeToSpotifyMode
-                ? "❌ Error processing the link. Please check if it's a valid YouTube URL and try again."
-                : "❌ Error processing the link. Please check if it's a valid Spotify URL and try again.";
+            let message = "❌ Error processing request. Please try again.";
+            if (mode === "YOUTUBE_TO_SPOTIFY") {
+                message = "❌ Error processing input. Use a YouTube link or plain keywords.";
+            } else if (mode === "SPOTIFY_TO_YOUTUBE") {
+                message = "❌ Error processing input. Use a Spotify link or plain keywords.";
+            } else {
+                message = "❌ Error searching Spotify and YouTube. Please try different keywords.";
+            }
             showMessage(message, "error");
             console.error("Error processing link", error);
         } finally {
@@ -473,8 +581,9 @@
         window.open(value, "_blank");
     };
 
-    youtubeModeBtn.addEventListener("click", () => setMode(true));
-    spotifyModeBtn.addEventListener("click", () => setMode(false));
+    youtubeModeBtn.addEventListener("click", () => setMode("YOUTUBE_TO_SPOTIFY"));
+    spotifyModeBtn.addEventListener("click", () => setMode("SPOTIFY_TO_YOUTUBE"));
+    simpleSearchModeBtn.addEventListener("click", () => setMode("SIMPLE_SEARCH"));
     searchBtn.addEventListener("click", processLink);
     linkInput.addEventListener("keydown", (event) => {
         if (event.key === "Enter") {

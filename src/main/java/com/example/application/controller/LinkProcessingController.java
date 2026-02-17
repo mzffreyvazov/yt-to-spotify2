@@ -8,6 +8,7 @@ import com.example.application.model.response.YoutubeResponse;
 import com.example.application.service.LinkConvertorService;
 import com.example.application.service.LinkProcessorService;
 import com.example.application.service.SpotifyService;
+import com.example.application.service.YoutubeService;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,13 +20,16 @@ public class LinkProcessingController {
     private final LinkConvertorService linkConverterService;
     private final LinkProcessorService linkProcessorService;
     private final SpotifyService spotifyService;
+    private final YoutubeService youtubeService;
     
     public LinkProcessingController(LinkConvertorService linkConverterService, 
                                   LinkProcessorService linkProcessorService,
-                                  SpotifyService spotifyService) {
+                                  SpotifyService spotifyService,
+                                  YoutubeService youtubeService) {
         this.linkConverterService = linkConverterService;
         this.linkProcessorService = linkProcessorService;
         this.spotifyService = spotifyService;
+        this.youtubeService = youtubeService;
     }
     
     /**
@@ -107,7 +111,7 @@ public class LinkProcessingController {
     @GetMapping("/youtube-to-spotify-tracks")
     public ResponseEntity<List<SpotifyResponse>> findSpotifyTracks(@RequestParam String youtubeUrl) {
         try {
-            List<SpotifyResponse> results = linkProcessorService.processYoutubeLink(youtubeUrl);
+            List<SpotifyResponse> results = linkProcessorService.processYoutubeInput(youtubeUrl);
             if (results.isEmpty()) {
                 System.out.println("Warning: No Spotify tracks found for: " + youtubeUrl);
             } else {
@@ -180,7 +184,7 @@ public class LinkProcessingController {
     @GetMapping("/spotify-to-youtube")
     public ResponseEntity<List<YoutubeResponse>> findYoutubeTracks(@RequestParam String spotifyUrl) {
         try {
-            List<YoutubeResponse> results = linkProcessorService.processSpotifyLink(spotifyUrl);
+            List<YoutubeResponse> results = linkProcessorService.processSpotifyInput(spotifyUrl);
             if (results.isEmpty()) {
                 System.out.println("Warning: No Youtube tracks found for: " + spotifyUrl);
             } else {
@@ -224,6 +228,30 @@ public class LinkProcessingController {
             errorResponse.put("error", e.getMessage());
             errorResponse.put("spotifyUrl", spotifyUrl);
             return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+
+    @GetMapping("/simple-search")
+    public ResponseEntity<Map<String, Object>> simpleSearch(@RequestParam String query) {
+        try {
+            String trimmedQuery = query == null ? "" : query.trim();
+            if (trimmedQuery.isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            List<SpotifyResponse> spotifyResults = spotifyService.getSpotifyResponse(trimmedQuery);
+            List<YoutubeResponse> youtubeResults = youtubeService.getYoutubeResponse(trimmedQuery);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("query", trimmedQuery);
+            response.put("spotifyResults", spotifyResults);
+            response.put("youtubeResults", youtubeResults);
+            response.put("spotifyCount", spotifyResults.size());
+            response.put("youtubeCount", youtubeResults.size());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            System.err.println("Error processing simple keyword search: " + e.getMessage());
+            return ResponseEntity.badRequest().build();
         }
     }
 }

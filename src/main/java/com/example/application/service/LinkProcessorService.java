@@ -33,6 +33,22 @@ public class LinkProcessorService {
         SpotifySearchQuery query = linkConvertor.youtubeToSpotifyQuery(youtubeUrl);
         return searchSpotifyWithFallbacks(query);
     }
+
+    /**
+     * Processes input for YouTube -> Spotify mode.
+     * - If input is a YouTube link, converts to Spotify query as before.
+     * - If input is plain keywords, directly searches Spotify.
+     */
+    public List<SpotifyResponse> processYoutubeInput(String input) {
+        String linkType = linkConvertor.detectLinkType(input);
+        if ("YOUTUBE".equals(linkType)) {
+            return processYoutubeLink(input);
+        }
+        if ("UNKNOWN".equals(linkType)) {
+            return searchSpotifyByKeyword(input);
+        }
+        throw new IllegalArgumentException("Please provide a YouTube link or plain keywords");
+    }
     
     /**
      * Processes a Spotify link and finds matching Youtube tracks
@@ -44,6 +60,40 @@ public class LinkProcessorService {
         
         YoutubeSearchQuery query = linkConvertor.spotifyToYoutubeQuery(spotifyUrl);
         return searchYoutubeWithFallbacks(query);
+    }
+
+    /**
+     * Processes input for Spotify -> YouTube mode.
+     * - If input is a Spotify link, converts to YouTube query as before.
+     * - If input is plain keywords, directly searches YouTube.
+     */
+    public List<YoutubeResponse> processSpotifyInput(String input) {
+        String linkType = linkConvertor.detectLinkType(input);
+        if ("SPOTIFY".equals(linkType)) {
+            return processSpotifyLink(input);
+        }
+        if ("UNKNOWN".equals(linkType)) {
+            return searchYoutubeByKeyword(input);
+        }
+        throw new IllegalArgumentException("Please provide a Spotify link or plain keywords");
+    }
+
+    private List<SpotifyResponse> searchSpotifyByKeyword(String keywords) {
+        String query = keywords == null ? "" : keywords.trim();
+        LOGGER.info("Processing plain keywords for Spotify search: " + query);
+        if (query.isEmpty()) {
+            return List.of();
+        }
+        return spotifyService.getSpotifyResponse(query);
+    }
+
+    private List<YoutubeResponse> searchYoutubeByKeyword(String keywords) {
+        String query = keywords == null ? "" : keywords.trim();
+        LOGGER.info("Processing plain keywords for YouTube search: " + query);
+        if (query.isEmpty()) {
+            return List.of();
+        }
+        return youtubeService.getYoutubeResponse(query);
     }
 
     /**
