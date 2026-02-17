@@ -30,4 +30,4 @@ jobs:
       run: chmod +x ./mvnw
 
     - name: Build with Maven
-      run: ./mvnw clean compile -Pproduction
+      run: ./mvnw clean compile

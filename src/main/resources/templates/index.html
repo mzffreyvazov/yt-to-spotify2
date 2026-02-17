@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Convert Music Links</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --bg: #f3f4f6;
+            --surface: #ffffff;
+            --text: #1f2937;
+            --muted: #4b5563;
+            --border: #d1d5db;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --success: #1f8f4e;
+            --success-hover: #18713e;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+        }
+
+        .container {
+            width: min(720px, calc(100% - 2rem));
+            margin: 40px auto;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: clamp(2rem, 3vw, 3rem);
+            margin: 0 0 18px;
+        }
+
+        .description {
+            margin: 0 auto 18px;
+            max-width: 700px;
+            line-height: 1.4;
+            font-size: clamp(1rem, 1.7vw, 1.2rem);
+            color: #243448;
+        }
+
+        .mode-switch {
+            display: inline-flex;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .mode-btn {
+            border: 0;
+            background: transparent;
+            color: var(--primary);
+            font-size: clamp(1rem, 1.4vw, 1.15rem);
+            padding: 9px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.16s ease;
+        }
+
+        .mode-btn.active {
+            background: var(--primary);
+            color: #fff;
+            font-weight: 700;
+        }
+
+        .input-wrap {
+            position: relative;
+            margin-bottom: 12px;
+        }
+
+        .link-input {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 11px 42px 11px 12px;
+            font-size: clamp(1rem, 1.5vw, 1.15rem);
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .link-input:focus {
+            outline: 2px solid #bfdbfe;
+            border-color: #93c5fd;
+            background: #fff;
+        }
+
+        .input-icon {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: #6b7280;
+            font-size: 1.25rem;
+        }
+
+        .search-btn {
+            width: 100%;
+            border: 0;
+            border-radius: 6px;
+            background: var(--success);
+            color: #fff;
+            font-weight: 700;
+            font-size: clamp(1rem, 1.5vw, 1.15rem);
+            padding: 11px;
+            cursor: pointer;
+            transition: background 0.16s ease;
+        }
+
+        .search-btn:hover {
+            background: var(--success-hover);
+        }
+
+        .search-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.75;
+        }
+
+        .results {
+            margin-top: 14px;
+            text-align: left;
+        }
+
+        .results-header {
+            font-weight: 700;
+            margin: 0 0 12px;
+            color: #111827;
+        }
+
+        .card {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            background: var(--surface);
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+        }
+
+        .thumb {
+            width: 66px;
+            height: 66px;
+            border-radius: 6px;
+            object-fit: cover;
+            background: #e5e7eb;
+        }
+
+        .card-main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .song-title {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .artist {
+            margin: 3px 0 8px;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            border: 1px solid var(--border);
+            background: #fff;
+            border-radius: 6px;
+            padding: 6px 9px;
+            cursor: pointer;
+            color: #1f2937;
+            font-weight: 600;
+            font-size: 0.86rem;
+            transition: all 0.15s ease;
+        }
+
+        .action-btn.copied {
+            background: #ecfdf3;
+            border-color: #22a05a;
+            color: #15803d;
+        }
+
+        .action-btn.primary {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .action-btn.primary:hover {
+            background: var(--primary-hover);
+            border-color: var(--primary-hover);
+        }
+
+        .message {
+            margin: 0;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-weight: 600;
+        }
+
+        .message.loading {
+            background: #ecfeff;
+            color: #155e75;
+        }
+
+        .message.success {
+            background: #ecfdf3;
+            color: #166534;
+        }
+
+        .message.error {
+            background: #fef2f2;
+            color: #b91c1c;
+        }
+
+        .notice {
+            position: fixed;
+            top: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(740px, calc(100% - 20px));
+            background: #fff;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14);
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            z-index: 20;
+        }
+
+        .notice-text {
+            margin: 0;
+            color: #1f2937;
+            font-weight: 600;
+            line-height: 1.35;
+        }
+
+        .notice-btn {
+            border: 1px solid #d1d5db;
+            background: #fff;
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin-top: 26px;
+            }
+
+            .card {
+                align-items: flex-start;
+            }
+
+            .notice {
+                flex-direction: column;
+            }
+
+            .notice-btn {
+                width: 120px;
+                align-self: flex-end;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Convert Music Links</h1>
+    <p class="description">
+        Transform your favorite music between YouTube and Spotify with a single click.
+        Just paste the link and we'll find the closest matches.
+    </p>
+
+    <div class="mode-switch">
+        <button id="youtubeModeBtn" class="mode-btn active" type="button">🎵 YouTube to Spotify</button>
+        <button id="spotifyModeBtn" class="mode-btn" type="button">🎵 Spotify to YouTube</button>
+    </div>
+
+    <div class="input-wrap">
+        <input id="linkInput" class="link-input" type="text" placeholder="Paste YouTube link here..."/>
+        <span class="input-icon">🎵</span>
+    </div>
+
+    <button id="searchBtn" class="search-btn" type="button">🔎 Find on Spotify</button>
+
+    <div id="results" class="results"></div>
+</div>
+
+<div id="koyebNotice" class="notice" style="display:none;">
+    <p class="notice-text">⚠️ This project is deployed with Koyeb on a hobby plan, so it may work slow due to the low resources.</p>
+    <button id="dismissNotice" class="notice-btn" type="button">✔ Got it</button>
+</div>
+
+<script>
+    const resultsEl = document.getElementById("results");
+    const linkInput = document.getElementById("linkInput");
+    const searchBtn = document.getElementById("searchBtn");
+    const youtubeModeBtn = document.getElementById("youtubeModeBtn");
+    const spotifyModeBtn = document.getElementById("spotifyModeBtn");
+
+    const koyebNotice = document.getElementById("koyebNotice");
+    const dismissNotice = document.getElementById("dismissNotice");
+
+    let youtubeToSpotifyMode = true;
+
+    function escapeHtml(value) {
+        return String(value ?? "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#39;");
+    }
+
+    function setMode(isYoutubeToSpotify) {
+        youtubeToSpotifyMode = isYoutubeToSpotify;
+        youtubeModeBtn.classList.toggle("active", isYoutubeToSpotify);
+        spotifyModeBtn.classList.toggle("active", !isYoutubeToSpotify);
+        linkInput.placeholder = isYoutubeToSpotify ? "Paste YouTube link here..." : "Paste Spotify link here...";
+        searchBtn.textContent = isYoutubeToSpotify ? "🔎 Find on Spotify" : "🔎 Find on YouTube";
+    }
+
+    function setLoading(loading) {
+        searchBtn.disabled = loading;
+        searchBtn.textContent = loading ? "Searching..." : (youtubeToSpotifyMode ? "🔎 Find on Spotify" : "🔎 Find on YouTube");
+    }
+
+    function showMessage(message, type) {
+        resultsEl.innerHTML = `<p class="message ${type}">${escapeHtml(message)}</p>`;
+    }
+
+    function createSpotifyCard(track) {
+        const trackUrl = track.spotifyUrl || "";
+        const cover = track.albumImageUrl || "https://via.placeholder.com/80x80?text=♫";
+        const safeUrl = JSON.stringify(trackUrl);
+
+        return `
+            <div class="card">
+                <img class="thumb" src="${escapeHtml(cover)}" alt="Album cover"/>
+                <div class="card-main">
+                    <p class="song-title">${escapeHtml(track.songTitle || "Unknown title")}</p>
+                    <p class="artist">${escapeHtml(track.artistName || "Unknown artist")}</p>
+                    <div class="actions">
+                        <button class="action-btn" type="button" onclick='copyText(${safeUrl}, this)' ${trackUrl ? "" : "disabled"}>Copy Link</button>
+                        <button class="action-btn primary" type="button" onclick='openLink(${safeUrl})' ${trackUrl ? "" : "disabled"}>Open</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function createYoutubeCard(video) {
+        const videoUrl = video.videoId ? `https://www.youtube.com/watch?v=${video.videoId}` : "";
+        const cover = video.thumbnailUrl || "https://via.placeholder.com/80x80?text=▶";
+        const safeUrl = JSON.stringify(videoUrl);
+
+        return `
+            <div class="card">
+                <img class="thumb" src="${escapeHtml(cover)}" alt="Video thumbnail"/>
+                <div class="card-main">
+                    <p class="song-title">${escapeHtml(video.songTitle || "Unknown title")}</p>
+                    <p class="artist">${escapeHtml(video.artistName || "Unknown artist")}</p>
+                    <div class="actions">
+                        <button class="action-btn" type="button" onclick='copyText(${safeUrl}, this)' ${videoUrl ? "" : "disabled"}>Copy Link</button>
+                        <button class="action-btn primary" type="button" onclick='openLink(${safeUrl})' ${videoUrl ? "" : "disabled"}>Open</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderResults(items) {
+        if (!Array.isArray(items) || items.length === 0) {
+            const emptyMessage = youtubeToSpotifyMode
+                ? "No matching tracks found. Try a different link or check if the video is a music track."
+                : "No matching videos found. Try a different link or check if the video is a music video.";
+            showMessage(emptyMessage, "success");
+            return;
+        }
+
+        const itemWord = youtubeToSpotifyMode ? "track" : "video";
+        const header = `<p class="results-header">Found ${items.length} matching ${itemWord}${items.length === 1 ? "" : "s"}:</p>`;
+        const cards = items
+            .map(item => youtubeToSpotifyMode ? createSpotifyCard(item) : createYoutubeCard(item))
+            .join("");
+        resultsEl.innerHTML = `${header}${cards}`;
+    }
+
+    async function processLink() {
+        const link = (linkInput.value || "").trim();
+        if (!link) {
+            showMessage("Please enter a valid link", "error");
+            return;
+        }
+
+        setLoading(true);
+        showMessage("🔍 Searching for matches...", "loading");
+
+        const endpoint = youtubeToSpotifyMode
+            ? `/api/links/youtube-to-spotify-tracks?youtubeUrl=${encodeURIComponent(link)}`
+            : `/api/links/spotify-to-youtube?spotifyUrl=${encodeURIComponent(link)}`;
+
+        try {
+            const response = await fetch(endpoint, {
+                method: "GET",
+                headers: {"Accept": "application/json"}
+            });
+
+            if (!response.ok) {
+                throw new Error("Request failed");
+            }
+
+            const results = await response.json();
+            renderResults(results);
+        } catch (error) {
+            const message = youtubeToSpotifyMode
+                ? "❌ Error processing the link. Please check if it's a valid YouTube URL and try again."
+                : "❌ Error processing the link. Please check if it's a valid Spotify URL and try again.";
+            showMessage(message, "error");
+            console.error("Error processing link", error);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    window.copyText = async function (value, button) {
+        if (!value) {
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(value);
+            if (button) {
+                const originalLabel = button.dataset.originalLabel || button.textContent;
+                button.dataset.originalLabel = originalLabel;
+                button.textContent = "Copied ✓";
+                button.classList.add("copied");
+                setTimeout(() => {
+                    button.textContent = button.dataset.originalLabel || "Copy Link";
+                    button.classList.remove("copied");
+                }, 1400);
+            }
+        } catch (error) {
+            console.error("Clipboard copy failed", error);
+        }
+    };
+
+    window.openLink = function (value) {
+        if (!value) {
+            return;
+        }
+        window.open(value, "_blank");
+    };
+
+    youtubeModeBtn.addEventListener("click", () => setMode(true));
+    spotifyModeBtn.addEventListener("click", () => setMode(false));
+    searchBtn.addEventListener("click", processLink);
+    linkInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            processLink();
+        }
+    });
+
+    if (localStorage.getItem("firstTimeNotificationShown") !== "true") {
+        koyebNotice.style.display = "flex";
+    }
+
+    dismissNotice.addEventListener("click", () => {
+        localStorage.setItem("firstTimeNotificationShown", "true");
+        koyebNotice.style.display = "none";
+    });
+</script>
+</body>
+</html>
