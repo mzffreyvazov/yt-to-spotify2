@@ -59,12 +59,8 @@ public class LinkProcessingController {
      */
     @GetMapping("/youtube-to-spotify")
     public ResponseEntity<SpotifySearchQuery> convertYoutubeToSpotify(@RequestParam String youtubeUrl) {
-        try {
-            SpotifySearchQuery query = linkConverterService.youtubeToSpotifyQuery(youtubeUrl);
-            return ResponseEntity.ok(query);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
-        }
+        SpotifySearchQuery query = linkConverterService.youtubeToSpotifyQuery(youtubeUrl);
+        return ResponseEntity.ok(query);
     }
     
     /**
@@ -72,19 +68,13 @@ public class LinkProcessingController {
      */
     @GetMapping("/test-query")
     public ResponseEntity<Map<String, String>> testSpotifyQuery(@RequestParam String youtubeUrl) {
-        try {
-            SpotifySearchQuery query = linkConverterService.youtubeToSpotifyQuery(youtubeUrl);
-            Map<String, String> response = new HashMap<>();
-            response.put("title", query.getTitle());
-            response.put("artist", query.getArtist());
-            response.put("album", query.getAlbum());
-            response.put("spotifyQueryString", query.toQueryString());
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(errorResponse);
-        }
+        SpotifySearchQuery query = linkConverterService.youtubeToSpotifyQuery(youtubeUrl);
+        Map<String, String> response = new HashMap<>();
+        response.put("title", query.getTitle());
+        response.put("artist", query.getArtist());
+        response.put("album", query.getAlbum());
+        response.put("spotifyQueryString", query.toQueryString());
+        return ResponseEntity.ok(response);
     }
     
     /**
@@ -110,19 +100,13 @@ public class LinkProcessingController {
      */
     @GetMapping("/youtube-to-spotify-tracks")
     public ResponseEntity<List<SpotifyResponse>> findSpotifyTracks(@RequestParam String youtubeUrl) {
-        try {
-            List<SpotifyResponse> results = linkProcessorService.processYoutubeInput(youtubeUrl);
-            if (results.isEmpty()) {
-                System.out.println("Warning: No Spotify tracks found for: " + youtubeUrl);
-            } else {
-                System.out.println("Found " + results.size() + " Spotify tracks for: " + youtubeUrl);
-            }
-            return ResponseEntity.ok(results);
-        } catch (Exception e) {
-            System.err.println("Error processing YouTube to Spotify conversion: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.badRequest().build();
+        List<SpotifyResponse> results = linkProcessorService.processYoutubeInput(youtubeUrl);
+        if (results.isEmpty()) {
+            System.out.println("Warning: No Spotify tracks found for: " + youtubeUrl);
+        } else {
+            System.out.println("Found " + results.size() + " Spotify tracks for: " + youtubeUrl);
         }
+        return ResponseEntity.ok(results);
     }
     
     /**
@@ -131,27 +115,20 @@ public class LinkProcessingController {
      */
     @GetMapping("/youtube-to-spotify-detailed")
     public ResponseEntity<Map<String, Object>> findSpotifyTracksDetailed(@RequestParam String youtubeUrl) {
-        try {
-            SpotifySearchQuery query = linkConverterService.youtubeToSpotifyQuery(youtubeUrl);
-            String queryString = query.toQueryString();
-            String generalQueryString = query.toGeneralQueryString();
-            
-            List<SpotifyResponse> results = linkProcessorService.processYoutubeLink(youtubeUrl);
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("query", query);
-            response.put("specificQueryString", queryString);
-            response.put("generalQueryString", generalQueryString);
-            response.put("results", results);
-            response.put("youtubeUrl", youtubeUrl);
-            response.put("count", results.size());
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-            errorResponse.put("youtubeUrl", youtubeUrl);
-            return ResponseEntity.badRequest().body(errorResponse);
-        }
+        SpotifySearchQuery query = linkConverterService.youtubeToSpotifyQuery(youtubeUrl);
+        String queryString = query.toQueryString();
+        String generalQueryString = query.toGeneralQueryString();
+
+        List<SpotifyResponse> results = linkProcessorService.processYoutubeLink(youtubeUrl);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("query", query);
+        response.put("specificQueryString", queryString);
+        response.put("generalQueryString", generalQueryString);
+        response.put("results", results);
+        response.put("youtubeUrl", youtubeUrl);
+        response.put("count", results.size());
+        return ResponseEntity.ok(response);
     }
     
     /**
@@ -160,98 +137,69 @@ public class LinkProcessingController {
      */
     @GetMapping("/youtube-to-spotify-unbiased")
     public ResponseEntity<List<SpotifyResponse>> findUnbiasedSpotifyTracks(@RequestParam String youtubeUrl) {
-        try {
-            SpotifySearchQuery query = linkConverterService.youtubeToSpotifyQuery(youtubeUrl);
-            // Use a more generic search query to avoid personalization
-            String queryString = query.toGeneralQueryString();
-            
-            // Add a random offset to the search to avoid always getting the same top results
-            // int randomOffset = (int)(Math.random() * 5);
-            
-            // Log the search for debugging
-            System.out.println("Performing unbiased search with query: " + queryString);
-            
-            List<SpotifyResponse> results = spotifyService.getSpotifyResponse(queryString);
-            System.out.println("Found " + results.size() + " results for unbiased search");
-            return ResponseEntity.ok(results);
-        } catch (Exception e) {
-            System.err.println("Error processing unbiased search: " + e.getMessage());
-            return ResponseEntity.badRequest().build();
-        }
+        SpotifySearchQuery query = linkConverterService.youtubeToSpotifyQuery(youtubeUrl);
+        String queryString = query.toGeneralQueryString();
+
+        System.out.println("Performing unbiased search with query: " + queryString);
+
+        List<SpotifyResponse> results = spotifyService.getSpotifyResponse(queryString);
+        System.out.println("Found " + results.size() + " results for unbiased search");
+        return ResponseEntity.ok(results);
     }
 
 
     @GetMapping("/spotify-to-youtube")
     public ResponseEntity<List<YoutubeResponse>> findYoutubeTracks(@RequestParam String spotifyUrl) {
-        try {
-            List<YoutubeResponse> results = linkProcessorService.processSpotifyInput(spotifyUrl);
-            if (results.isEmpty()) {
-                System.out.println("Warning: No Youtube tracks found for: " + spotifyUrl);
-            } else {
-                System.out.println("Found " + results.size() + " Youtube tracks for: " + spotifyUrl);
-            }
-            return ResponseEntity.ok(results);
-        } catch (Exception e) {
-            System.err.println("Error processing Spotify to YouTube conversion: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.badRequest().build();
+        List<YoutubeResponse> results = linkProcessorService.processSpotifyInput(spotifyUrl);
+        if (results.isEmpty()) {
+            System.out.println("Warning: No Youtube tracks found for: " + spotifyUrl);
+        } else {
+            System.out.println("Found " + results.size() + " Youtube tracks for: " + spotifyUrl);
         }
+        return ResponseEntity.ok(results);
     }
 
     @GetMapping("/spotify-to-youtube-detailed")
     public ResponseEntity<Map<String, Object>> findYoutubeTracksDetailed(@RequestParam String spotifyUrl) {
-        try {
-            com.example.application.model.queries.YoutubeSearchQuery query = linkConverterService.spotifyToYoutubeQuery(spotifyUrl);
-            String queryString = query.toQueryString();
-            String generalQueryString = query.toGeneralQueryString();
-            
-            List<YoutubeResponse> results = linkProcessorService.processSpotifyLink(spotifyUrl);
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("query", query);
-            response.put("specificQueryString", queryString);
-            response.put("generalQueryString", generalQueryString);
-            response.put("results", results);
-            response.put("spotifyUrl", spotifyUrl);
-            response.put("count", results.size());
-            
-            // Add additional search metadata
-            Map<String, String> searchMetadata = new HashMap<>();
-            searchMetadata.put("searchType", "track");
-            searchMetadata.put("resultLimit", "5");
-            searchMetadata.put("includeCovers", "true");
-            response.put("searchMetadata", searchMetadata);
-            
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-            errorResponse.put("spotifyUrl", spotifyUrl);
-            return ResponseEntity.badRequest().body(errorResponse);
-        }
+        com.example.application.model.queries.YoutubeSearchQuery query = linkConverterService.spotifyToYoutubeQuery(spotifyUrl);
+        String queryString = query.toQueryString();
+        String generalQueryString = query.toGeneralQueryString();
+
+        List<YoutubeResponse> results = linkProcessorService.processSpotifyLink(spotifyUrl);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("query", query);
+        response.put("specificQueryString", queryString);
+        response.put("generalQueryString", generalQueryString);
+        response.put("results", results);
+        response.put("spotifyUrl", spotifyUrl);
+        response.put("count", results.size());
+
+        Map<String, String> searchMetadata = new HashMap<>();
+        searchMetadata.put("searchType", "track");
+        searchMetadata.put("resultLimit", "5");
+        searchMetadata.put("includeCovers", "true");
+        response.put("searchMetadata", searchMetadata);
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/simple-search")
     public ResponseEntity<Map<String, Object>> simpleSearch(@RequestParam String query) {
-        try {
-            String trimmedQuery = query == null ? "" : query.trim();
-            if (trimmedQuery.isEmpty()) {
-                return ResponseEntity.badRequest().build();
-            }
-
-            List<SpotifyResponse> spotifyResults = spotifyService.getSpotifyResponse(trimmedQuery);
-            List<YoutubeResponse> youtubeResults = youtubeService.getYoutubeResponse(trimmedQuery);
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("query", trimmedQuery);
-            response.put("spotifyResults", spotifyResults);
-            response.put("youtubeResults", youtubeResults);
-            response.put("spotifyCount", spotifyResults.size());
-            response.put("youtubeCount", youtubeResults.size());
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            System.err.println("Error processing simple keyword search: " + e.getMessage());
+        String trimmedQuery = query == null ? "" : query.trim();
+        if (trimmedQuery.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
+
+        List<SpotifyResponse> spotifyResults = spotifyService.getSpotifyResponse(trimmedQuery);
+        List<YoutubeResponse> youtubeResults = youtubeService.getYoutubeResponse(trimmedQuery);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("query", trimmedQuery);
+        response.put("spotifyResults", spotifyResults);
+        response.put("youtubeResults", youtubeResults);
+        response.put("spotifyCount", spotifyResults.size());
+        response.put("youtubeCount", youtubeResults.size());
+        return ResponseEntity.ok(response);
     }
 }

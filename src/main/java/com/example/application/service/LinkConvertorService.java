@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.application.model.response.SpotifyResponse;
 import com.example.application.model.response.YoutubeResponse;
+import com.example.application.exception.InvalidLinkException;
 import com.example.application.model.queries.SpotifySearchQuery;
 import com.example.application.model.queries.YoutubeSearchQuery;
 
@@ -81,7 +82,7 @@ public class LinkConvertorService {
     public SpotifySearchQuery youtubeToSpotifyQuery(String youtubeUrl) {
         String videoId = extractYoutubeId(youtubeUrl);
         if (videoId == null) {
-            throw new IllegalArgumentException("Invalid YouTube URL: " + youtubeUrl);
+            throw new InvalidLinkException("Invalid YouTube URL: " + youtubeUrl);
         }
         
         YoutubeResponse ytResponse = youtubeService.getSingleVideo(videoId);
@@ -91,7 +92,7 @@ public class LinkConvertorService {
     public YoutubeSearchQuery spotifyToYoutubeQuery(String spotifyUrl) {
         String trackId = extractSpotifyId(spotifyUrl);
         if (trackId == null) {
-            throw new IllegalArgumentException("Invalid Spotify URL: " + spotifyUrl);
+            throw new InvalidLinkException("Invalid Spotify URL: " + spotifyUrl);
         }
         
         // Here you would implement logic to convert Spotify track ID to a YouTube search query

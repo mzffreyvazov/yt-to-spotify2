@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestClient;
 
 import com.example.application.config.SpotifyProperties;
+import com.example.application.exception.UpstreamServiceException;
 import com.example.application.model.response.SpotifyResponse;
 import com.example.application.model.spotify_dto.SpotifySearchApiResponse;
 import com.example.application.model.spotify_dto.TrackItem;
@@ -78,7 +79,7 @@ public class SpotifyService {
             return response.getAccessToken();
         } catch (Exception e) {
             System.err.println("Error getting Spotify access token: " + e.getMessage());
-            throw new RuntimeException("Failed to obtain Spotify access token", e);
+            throw new UpstreamServiceException("Failed to obtain Spotify access token", e);
         }
     }
 
@@ -184,7 +185,7 @@ public class SpotifyService {
                 .body(TrackItem.class);
         
         if (trackItem == null) {
-            throw new RuntimeException("Track not found");
+            throw new UpstreamServiceException("Track not found");
         }
         
         return mapTrackItemToSpotifyResponse(trackItem);

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import com.example.application.config.YoutubeProperties;
+import com.example.application.exception.UpstreamServiceException;
 import com.example.application.model.response.YoutubeResponse;
 import com.example.application.model.youtube_dto.SearchItem;
 import com.example.application.model.youtube_dto.VideoItem;
@@ -90,7 +91,7 @@ public class YoutubeService {
                 .body(YouTubeVideoApiResponse.class);
         
         if (apiResponse == null || apiResponse.getItems() == null || apiResponse.getItems().isEmpty()) {
-            throw new RuntimeException("Video not found");
+            throw new UpstreamServiceException("Video not found");
         }
         
         // Get the first item (should be the only one since we're querying by ID)
