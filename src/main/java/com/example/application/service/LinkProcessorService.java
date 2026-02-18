@@ -1,6 +1,8 @@
 package com.example.application.service;
 
 import org.springframework.stereotype.Service;
+
+import com.example.application.exception.InvalidLinkException;
 import com.example.application.model.queries.SpotifySearchQuery;
 import com.example.application.model.queries.YoutubeSearchQuery;
 import com.example.application.model.response.SpotifyResponse;
@@ -47,7 +49,7 @@ public class LinkProcessorService {
         if ("UNKNOWN".equals(linkType)) {
             return searchSpotifyByKeyword(input);
         }
-        throw new IllegalArgumentException("Please provide a YouTube link or plain keywords");
+        throw new InvalidLinkException("Please provide a YouTube link or plain keywords");
     }
     
     /**
@@ -75,7 +77,7 @@ public class LinkProcessorService {
         if ("UNKNOWN".equals(linkType)) {
             return searchYoutubeByKeyword(input);
         }
-        throw new IllegalArgumentException("Please provide a Spotify link or plain keywords");
+        throw new InvalidLinkException("Please provide a Spotify link or plain keywords");
     }
 
     private List<SpotifyResponse> searchSpotifyByKeyword(String keywords) {

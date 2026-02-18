@@ -528,7 +528,19 @@
             });
 
             if (!response.ok) {
-                throw new Error("Request failed");
+                let errorPayload = null;
+                try {
+                    errorPayload = await response.json();
+                } catch (parseError) {
+                    errorPayload = null;
+                }
+
+                const apiError = errorPayload?.error || "";
+                const apiMessage = errorPayload?.message || "";
+                const requestError = new Error(apiMessage || "Request failed");
+                requestError.apiError = apiError;
+                requestError.status = response.status;
+                throw requestError;
             }
 
             const results = await response.json();
@@ -539,7 +551,10 @@
             }
         } catch (error) {
             let message = "❌ Error processing request. Please try again.";
-            if (mode === "YOUTUBE_TO_SPOTIFY") {
+
+            if (error?.apiError === "UPSTREAM_UNAVAILABLE") {
+                message = "❌ Error processing request. Please try again.";
+            } else if (mode === "YOUTUBE_TO_SPOTIFY") {
                 message = "❌ Error processing input. Use a YouTube link or plain keywords.";
             } else if (mode === "SPOTIFY_TO_YOUTUBE") {
                 message = "❌ Error processing input. Use a Spotify link or plain keywords.";
