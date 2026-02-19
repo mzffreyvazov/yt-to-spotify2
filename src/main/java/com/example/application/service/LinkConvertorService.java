@@ -156,7 +156,7 @@ public class LinkConvertorService {
      * Cleans up the video title to extract just the song name
      * Removes common patterns like "Official Video", "ft.", etc.
      */
-    private String cleanupTitle(String title) {
+    String cleanupTitle(String title) {
         if (title == null) return "";
         
         // Remove patterns like (Official Video), [Official Music Video], etc.
@@ -174,7 +174,7 @@ public class LinkConvertorService {
         return cleaned.trim();
     }    
     
-    private String cleanupArtist(String artist) {
+    String cleanupArtist(String artist) {
         if (artist == null) return "";
         
         // Remove common noise in artist names
