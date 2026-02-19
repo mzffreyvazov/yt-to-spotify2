@@ -1,19 +1,22 @@
 package com.example.application.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals; // ← JUnit 5
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.stream.Stream;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
+//import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import com.example.application.exception.InvalidLinkException;
 
+
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class LinkConverterServiceTest {
     
     private LinkConvertorService linkConvertorService;
@@ -34,6 +37,7 @@ public class LinkConverterServiceTest {
     // String cleanupArtist(String artist)
 
     // Writing tests (parameterized) for detectLinkType method
+    @Order(1)
     @ParameterizedTest
     @DisplayName("Detect Link Type - YouTube URLs")
     @ValueSource(strings = {
@@ -45,6 +49,7 @@ public class LinkConverterServiceTest {
         assertEquals("YOUTUBE", linkConvertorService.detectLinkType(url));
     }
 
+    @Order(2)
     @ParameterizedTest
     @DisplayName("Detect Link Type - Spotify URLs")
     @ValueSource(strings = {
@@ -55,6 +60,7 @@ public class LinkConverterServiceTest {
         assertEquals("SPOTIFY", linkConvertorService.detectLinkType(url));
     }
 
+    @Order(3)
     @ParameterizedTest
     @DisplayName("Detect Link Type - Invalid URLs")
     @NullAndEmptySource
@@ -62,6 +68,7 @@ public class LinkConverterServiceTest {
         assertEquals("INVALID", linkConvertorService.detectLinkType(url));
     }
 
+    @Order(4)
     @ParameterizedTest
     @DisplayName("Detect Link Type - Unknown URLs")
     @ValueSource(strings = {
@@ -78,6 +85,7 @@ public class LinkConverterServiceTest {
     @DisplayName("Detect Link Type (Nested) - YouTube URLs")
     class DetectLinkTypeTests {
 
+        @Order(1)
         @ParameterizedTest
         @DisplayName("Detect Link Type - YouTube URLs")
         @ValueSource(strings = {
@@ -94,6 +102,7 @@ public class LinkConverterServiceTest {
     @DisplayName("Extract Youtube ID Tests")
     class ExtractYoutubeIdTests {
 
+        @Order(1)
         @ParameterizedTest
         @CsvSource(ignoreLeadingAndTrailingWhitespace = true, value = {
             "https://www.youtube.com/watch?v=dQw4w9WgXcQ, dQw4w9WgXcQ",
@@ -111,6 +120,7 @@ public class LinkConverterServiceTest {
     @DisplayName("Cleanup Title Tests")
     class CleanupTitleTests {
 
+        @Order(1)
         @ParameterizedTest
         @CsvSource({
             "Shape of You (Official Video),                          Shape of You",
@@ -126,6 +136,7 @@ public class LinkConverterServiceTest {
             assertEquals(expected, linkConvertorService.cleanupTitle(input));
         }
 
+        @Order(2)
         @ParameterizedTest
         @NullAndEmptySource
         public void cleanupTitle_withNullOrEmpty_returnsEmpty(String input) {
@@ -137,6 +148,7 @@ public class LinkConverterServiceTest {
     @DisplayName("Cleanup Artist Tests")
     class CleanupArtistTests {
 
+        @Order(1)
         @ParameterizedTest
         @CsvSource({
             "Ed Sheeran (Official),        Ed Sheeran",
@@ -152,6 +164,7 @@ public class LinkConverterServiceTest {
             assertEquals(expected, linkConvertorService.cleanupArtist(input));
         }
 
+        @Order(2)
         @ParameterizedTest
         @NullAndEmptySource
         public void cleanupArtist_withNullOrEmpty_returnsEmpty(String input) {
@@ -160,6 +173,7 @@ public class LinkConverterServiceTest {
     }
 
     // Writing tests (method source) for extractSpotifyId method
+    @Order(5)
     @ParameterizedTest
     @MethodSource("provideSpotifyUrlsWithIds")
     @DisplayName("Extract Spotify ID (Method Source) - Valid URLs")
@@ -176,4 +190,11 @@ public class LinkConverterServiceTest {
     }
 
 
+    @Order(6)
+    @Test
+    @DisplayName("Youtube to Spotify Query - Invalid URL Throws InvalidLinkException")
+    public void youtubeSpotifyQuery_withNull_shouldThrowInvalidLinkException() {
+        String badUrl = "https://google.com/search?q=hello";
+        assertThrows(InvalidLinkException.class, () -> linkConvertorService.youtubeToSpotifyQuery(badUrl));
+    }
 }
