@@ -152,28 +152,6 @@ public class SpotifyService {
         return new SpotifyResponse(trackId, songTitle, artistName, albumImageUrl, previewUrl, spotifyUrl);
     }
 
-    // private SpotifyResponse mapTrackItemToSpotifyResponse(SingleTrackItem item) {
-    //     if (item == null || item.getAlbum() == null || item.getAlbum().getReleaseDate() == null || item.getArtist() == null) {
-    //         return null;
-    //     }
-
-    //     String trackId = item.getId();
-    //     String songTitle = item.getName();
-    //     String artistName = item.getArtist().getName();
-    //     String spotifyUrl = (item.getExternalUrls() != null) ? item.getExternalUrls().getSpotify() : null;
-    //     String previewUrl = item.getPreviewUrl();
-
-    //     String albumImageUrl = null;
-    //     if (!item.getAlbum().getImages().isEmpty()) {
-    //         // Sort by width descending to get the largest image
-    //         item.getAlbum().getImages().sort((img1, img2) -> Integer.compare(img2.getWidth(), img1.getWidth()));
-    //         albumImageUrl = item.getAlbum().getImages().get(0).getUrl();
-    //     }
-
-    //     // Add the missing return statement
-    //     return new SpotifyResponse(trackId, songTitle, artistName, albumImageUrl, previewUrl, spotifyUrl);
-    // }
-
 
     public SpotifyResponse getSingleTrack(@RequestParam String trackId) {
         String token = getCachedAccessToken();
