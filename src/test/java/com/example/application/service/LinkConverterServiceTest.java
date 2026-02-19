@@ -197,4 +197,11 @@ public class LinkConverterServiceTest {
         String badUrl = "https://google.com/search?q=hello";
         assertThrows(InvalidLinkException.class, () -> linkConvertorService.youtubeToSpotifyQuery(badUrl));
     }
+
+    @Test
+    @DisplayName("Spotify to YouTube Query - Invalid URL Throws InvalidLinkException")
+    public void spotifyYoutubeQuery_withNull_shouldThrowInvalidLinkException() {
+        String badUrl = "https://google.com/search?q=hello";
+        assertThrows(InvalidLinkException.class, () -> linkConvertorService.spotifyToYoutubeQuery(badUrl));
+    }
 }
