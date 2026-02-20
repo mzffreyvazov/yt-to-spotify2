@@ -34,8 +34,8 @@ public class YoutubeService {
     private static final String typeUrlParam = "video";
 
 
-    public YoutubeService(@Qualifier("searchWebClientYoutube") RestClient searchWebClient,
-                          @Qualifier("trackWebClientYoutube") RestClient trackWebClient,
+    public YoutubeService(@Qualifier("youtubeClient") RestClient searchWebClient,
+                          @Qualifier("youtubeClient") RestClient trackWebClient,
                           YoutubeProperties youtubeProperties) {
         this.searchWebClientYt = searchWebClient;
         this.trackWebClientYt = trackWebClient;
@@ -49,6 +49,7 @@ public class YoutubeService {
         
         YouTubeSearchApiResponse apiResponse = searchWebClientYt.get()
                 .uri(uriBuilder -> uriBuilder
+                .path("/youtube/v3/search")
                 .queryParam("key", apiKey)
                         .queryParam("q", searchQuery)
                         .queryParam("part", partUrlParam)
@@ -83,6 +84,7 @@ public class YoutubeService {
         String apiKey = youtubeProperties.getApiKey();
         YouTubeVideoApiResponse apiResponse = trackWebClientYt.get()
                 .uri(uriBuilder -> uriBuilder
+                .path("/youtube/v3/videos")
                 .queryParam("key", apiKey)
                         .queryParam("id", videoId)
                         .queryParam("part", "snippet,contentDetails,statistics")  // Request additional parts

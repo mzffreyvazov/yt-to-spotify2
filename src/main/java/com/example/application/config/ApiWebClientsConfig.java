@@ -15,34 +15,18 @@ public class ApiWebClientsConfig {
     }
 
     @Bean
-    @Qualifier("searchWebClientSpotify") 
-    public RestClient searchWebClient() {
+    @Qualifier("spotifyClient")
+    public RestClient spotifyClient() {
         return RestClient.builder()
-                .baseUrl(apiProperties.getSpotify().getSearchBaseUrl())
+                .baseUrl(apiProperties.getSpotify().getBaseUrl())
                 .build();
     }
 
     @Bean
-    @Qualifier("trackWebClientSpotify") 
-    public RestClient trackWebClient() {
+    @Qualifier("youtubeClient")
+    public RestClient youtubeClient() {
         return RestClient.builder()
-                .baseUrl(apiProperties.getSpotify().getTrackBaseUrl())
-                .build();
-    }
-    
-    @Bean
-    @Qualifier("searchWebClientYoutube") 
-    public RestClient searchWebClientYt() {
-        return RestClient.builder()
-                .baseUrl(apiProperties.getYoutube().getSearchBaseUrl())
-                .build();
-    }
-
-    @Bean
-    @Qualifier("trackWebClientYoutube") 
-    public RestClient trackWebClientYt() {
-        return RestClient.builder()
-                .baseUrl(apiProperties.getYoutube().getTrackBaseUrl())
+                .baseUrl(apiProperties.getYoutube().getBaseUrl())
                 .build();
     }
 

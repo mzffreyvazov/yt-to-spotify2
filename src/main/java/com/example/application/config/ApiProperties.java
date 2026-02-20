@@ -19,44 +19,26 @@ public class ApiProperties {
     }
 
     public static class Spotify {
-        private String searchBaseUrl;
-        private String trackBaseUrl;
+        private String baseUrl;
 
-        public String getSearchBaseUrl() {
-            return searchBaseUrl;
+        public String getBaseUrl() {
+            return baseUrl;
         }
 
-        public void setSearchBaseUrl(String searchBaseUrl) {
-            this.searchBaseUrl = searchBaseUrl;
-        }
-
-        public String getTrackBaseUrl() {
-            return trackBaseUrl;
-        }
-
-        public void setTrackBaseUrl(String trackBaseUrl) {
-            this.trackBaseUrl = trackBaseUrl;
+        public void setBaseUrl(String baseUrl) {
+            this.baseUrl = baseUrl;
         }
     }
 
     public static class Youtube {
-        private String searchBaseUrl;
-        private String trackBaseUrl;
+        private String baseUrl;
 
-        public String getSearchBaseUrl() {
-            return searchBaseUrl;
+        public String getBaseUrl() {
+            return baseUrl;
         }
 
-        public void setSearchBaseUrl(String searchBaseUrl) {
-            this.searchBaseUrl = searchBaseUrl;
-        }
-
-        public String getTrackBaseUrl() {
-            return trackBaseUrl;
-        }
-
-        public void setTrackBaseUrl(String trackBaseUrl) {
-            this.trackBaseUrl = trackBaseUrl;
+        public void setBaseUrl(String baseUrl) {
+            this.baseUrl = baseUrl;
         }
     }
 }
