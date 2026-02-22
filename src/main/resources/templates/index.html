@@ -238,6 +238,69 @@
             border-color: var(--primary-hover);
         }
 
+        .action-btn.save {
+            border-color: #1db954;
+            color: #1db954;
+        }
+
+        .action-btn.save:hover {
+            background: #e7faf0;
+        }
+
+        .action-btn.save.saved {
+            background: #1db954;
+            border-color: #1db954;
+            color: #fff;
+        }
+
+        .action-btn.save:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .spotify-auth-bar {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 10px 0 4px;
+            padding: 9px 14px;
+            border-radius: 8px;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            font-size: 0.92rem;
+            color: #166534;
+            font-weight: 600;
+        }
+
+        .spotify-auth-bar.disconnected {
+            background: #f9fafb;
+            border-color: #e5e7eb;
+            color: #374151;
+        }
+
+        .spotify-connect-btn {
+            border: 1px solid #1db954;
+            background: #1db954;
+            color: #fff;
+            border-radius: 6px;
+            padding: 5px 12px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 0.86rem;
+            transition: opacity 0.15s;
+        }
+
+        .spotify-connect-btn:hover {
+            opacity: 0.85;
+        }
+
+        .spotify-connect-btn.disconnect {
+            background: #fff;
+            color: #374151;
+            border-color: #d1d5db;
+        }
+
         .message {
             margin: 0;
             border-radius: 8px;
@@ -339,6 +402,11 @@
 
     <button id="searchBtn" class="search-btn" type="button">🔎 Find on Spotify</button>
 
+    <div id="spotifyAuthBar" class="spotify-auth-bar disconnected">
+        <span id="spotifyAuthStatus">Connect Spotify to save tracks to your Liked Songs</span>
+        <button id="spotifyConnectBtn" class="spotify-connect-btn" type="button">Connect</button>
+    </div>
+
     <div id="results" class="results"></div>
 </div>
 
@@ -359,6 +427,53 @@
     const dismissNotice = document.getElementById("dismissNotice");
 
     let mode = "YOUTUBE_TO_SPOTIFY";
+    let spotifyLoggedIn = false;
+
+    const spotifyAuthBar    = document.getElementById("spotifyAuthBar");
+    const spotifyAuthStatus = document.getElementById("spotifyAuthStatus");
+    const spotifyConnectBtn = document.getElementById("spotifyConnectBtn");
+
+    async function checkSpotifyAuthStatus() {
+        try {
+            const res = await fetch("/api/spotify/auth/status");
+            if (res.ok) {
+                const data = await res.json();
+                spotifyLoggedIn = !!data.loggedIn;
+            }
+        } catch (e) {
+            spotifyLoggedIn = false;
+        }
+        updateSpotifyAuthBar();
+    }
+
+    function updateSpotifyAuthBar() {
+        if (mode !== "YOUTUBE_TO_SPOTIFY") {
+            spotifyAuthBar.style.display = "none";
+            return;
+        }
+        spotifyAuthBar.style.display = "flex";
+        if (spotifyLoggedIn) {
+            spotifyAuthBar.classList.remove("disconnected");
+            spotifyAuthStatus.textContent = "✅ Connected to Spotify — save tracks to your Liked Songs";
+            spotifyConnectBtn.textContent = "Disconnect";
+            spotifyConnectBtn.classList.add("disconnect");
+        } else {
+            spotifyAuthBar.classList.add("disconnected");
+            spotifyAuthStatus.textContent = "Connect Spotify to save tracks to your Liked Songs";
+            spotifyConnectBtn.textContent = "Connect";
+            spotifyConnectBtn.classList.remove("disconnect");
+        }
+    }
+
+    spotifyConnectBtn.addEventListener("click", async () => {
+        if (spotifyLoggedIn) {
+            await fetch("/api/spotify/auth/logout", { method: "POST" });
+            spotifyLoggedIn = false;
+            updateSpotifyAuthBar();
+        } else {
+            window.location.href = "/api/spotify/auth/login";
+        }
+    });
 
     function escapeHtml(value) {
         return String(value ?? "")
@@ -374,6 +489,7 @@
         youtubeModeBtn.classList.toggle("active", mode === "YOUTUBE_TO_SPOTIFY");
         spotifyModeBtn.classList.toggle("active", mode === "SPOTIFY_TO_YOUTUBE");
         simpleSearchModeBtn.classList.toggle("active", mode === "SIMPLE_SEARCH");
+        updateSpotifyAuthBar();
 
         if (mode === "YOUTUBE_TO_SPOTIFY") {
             linkInput.placeholder = "Paste YouTube link or type keywords";
@@ -411,10 +527,16 @@
         resultsEl.innerHTML = `<p class="message ${type}">${escapeHtml(message)}</p>`;
     }
 
-    function createSpotifyCard(track) {
+    function createSpotifyCard(track, showSave) {
         const trackUrl = track.spotifyUrl || "";
-        const cover = track.albumImageUrl || "https://via.placeholder.com/80x80?text=♫";
-        const safeUrl = JSON.stringify(trackUrl);
+        const trackId  = track.trackId   || "";
+        const cover    = track.albumImageUrl || "https://via.placeholder.com/80x80?text=♫";
+        const safeUrl  = JSON.stringify(trackUrl);
+        const safeId   = JSON.stringify(trackId);
+
+        const saveBtn = (showSave && trackId)
+            ? `<button class="action-btn save" type="button" onclick='saveTrack(${safeId}, this)'>❤ Save</button>`
+            : "";
 
         return `
             <div class="card">
@@ -425,6 +547,7 @@
                     <div class="actions">
                         <button class="action-btn" type="button" onclick='copyText(${safeUrl}, this)' ${trackUrl ? "" : "disabled"}>Copy Link</button>
                         <button class="action-btn primary" type="button" onclick='openLink(${safeUrl})' ${trackUrl ? "" : "disabled"}>Open</button>
+                        ${saveBtn}
                     </div>
                 </div>
             </div>
@@ -461,7 +584,7 @@
         }
 
         const spotifyCards = spotifyItems.length > 0
-            ? spotifyItems.map(createSpotifyCard).join("")
+            ? spotifyItems.map(t => createSpotifyCard(t, false)).join("")
             : '<p class="split-empty">No Spotify results.</p>';
         const youtubeCards = youtubeItems.length > 0
             ? youtubeItems.map(createYoutubeCard).join("")
@@ -495,7 +618,7 @@
         const itemWord = mode === "YOUTUBE_TO_SPOTIFY" ? "track" : "video";
         const header = `<p class="results-header">Found ${items.length} matching ${itemWord}${items.length === 1 ? "" : "s"}:</p>`;
         const cards = items
-            .map(item => mode === "YOUTUBE_TO_SPOTIFY" ? createSpotifyCard(item) : createYoutubeCard(item))
+            .map(item => mode === "YOUTUBE_TO_SPOTIFY" ? createSpotifyCard(item, true) : createYoutubeCard(item))
             .join("");
         resultsEl.innerHTML = `${header}${cards}`;
     }
@@ -597,6 +720,42 @@
         window.open(value, "_blank");
     };
 
+    window.saveTrack = async function (trackId, button) {
+        if (!trackId) return;
+
+        if (!spotifyLoggedIn) {
+            window.location.href = "/api/spotify/auth/login";
+            return;
+        }
+
+        button.disabled = true;
+        const originalText = button.textContent;
+        button.textContent = "Saving...";
+
+        try {
+            const res = await fetch(`/api/spotify/me/tracks?trackId=${encodeURIComponent(trackId)}`, {
+                method: "POST",
+                headers: { "Accept": "application/json" }
+            });
+
+            if (res.status === 401) {
+                spotifyLoggedIn = false;
+                updateSpotifyAuthBar();
+                window.location.href = "/api/spotify/auth/login";
+                return;
+            }
+
+            if (!res.ok) throw new Error("Save failed");
+
+            button.textContent = "❤ Saved!";
+            button.classList.add("saved");
+        } catch (err) {
+            button.textContent = originalText;
+            button.disabled = false;
+            console.error("Failed to save track", err);
+        }
+    };
+
     youtubeModeBtn.addEventListener("click", () => setMode("YOUTUBE_TO_SPOTIFY"));
     spotifyModeBtn.addEventListener("click", () => setMode("SPOTIFY_TO_YOUTUBE"));
     simpleSearchModeBtn.addEventListener("click", () => setMode("SIMPLE_SEARCH"));
@@ -606,6 +765,18 @@
             processLink();
         }
     });
+
+    // Handle Spotify OAuth redirect results
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has("spotifyAuthSuccess")) {
+        spotifyLoggedIn = true;
+        updateSpotifyAuthBar();
+        window.history.replaceState({}, document.title, "/");
+    } else if (urlParams.has("spotifyAuthError")) {
+        window.history.replaceState({}, document.title, "/");
+    } else {
+        checkSpotifyAuthStatus();
+    }
 
     if (localStorage.getItem("firstTimeNotificationShown") !== "true") {
         koyebNotice.style.display = "flex";

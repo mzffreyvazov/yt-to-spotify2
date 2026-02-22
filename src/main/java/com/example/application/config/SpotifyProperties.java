@@ -7,6 +7,7 @@ public class SpotifyProperties {
     private String authUrl;
     private String clientId;
     private String clientSecret;
+    private String redirectUri;
 
     public String getAuthUrl() {
         return authUrl;
@@ -30,5 +31,13 @@ public class SpotifyProperties {
 
     public void setClientSecret(String clientSecret) {
         this.clientSecret = clientSecret;
+    }
+
+    public String getRedirectUri() {
+        return redirectUri;
+    }
+
+    public void setRedirectUri(String redirectUri) {
+        this.redirectUri = redirectUri;
     }
 }
