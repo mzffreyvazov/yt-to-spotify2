@@ -85,7 +85,6 @@ public class SpotifyUserAuthController {
                 + "&response_type=code"
                 + "&redirect_uri="  + encode(redirectUri)
                 + "&scope="         + encode(REQUIRED_SCOPE)
-            + "&show_dialog=true"
                 + "&state="         + encode(state);
 
         response.sendRedirect(url);
