@@ -138,7 +138,6 @@ public class SpotifyController {
                          "message", "Spotify session expired. Please log in again."));
             }
             if (ex.getStatusCode().value() == 403) {
-            userTokenService.clearTokens(session);
             return ResponseEntity.status(403)
                 .body(Map.of("error", "INSUFFICIENT_SCOPE",
                          "message", "Spotify authorization is missing required permissions. Please reconnect Spotify."));
@@ -181,7 +180,6 @@ public class SpotifyController {
                              "message", "Spotify session expired. Please log in again."));
             }
             if (ex.getStatusCode().value() == 403) {
-                userTokenService.clearTokens(session);
                 return ResponseEntity.status(403)
                     .body(Map.of("error", "INSUFFICIENT_SCOPE",
                              "message", "Spotify authorization is missing required permissions. Please reconnect Spotify."));

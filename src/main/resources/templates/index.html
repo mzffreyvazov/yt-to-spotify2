@@ -797,10 +797,16 @@
                 headers: { "Accept": "application/json" }
             });
 
-            if (res.status === 401 || res.status === 403) {
+            if (res.status === 401) {
                 spotifyLoggedIn = false;
                 updateSpotifyAuthBar();
                 window.location.href = "/api/spotify/auth/login";
+                return;
+            }
+
+            if (res.status === 403) {
+                setSaveButtonState(button, isCurrentlySaved);
+                showMessage("❌ Spotify denied this action (missing permission). Please reconnect Spotify and try again.", "error");
                 return;
             }
 
