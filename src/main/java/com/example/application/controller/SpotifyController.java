@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -86,6 +87,49 @@ public class SpotifyController {
             return ResponseEntity.status(403)
                 .body(Map.of("error", "INSUFFICIENT_SCOPE",
                          "message", "Spotify authorization is missing required permissions. Please reconnect Spotify."));
+            }
+            throw ex;
+        }
+    }
+
+    /**
+     * Removes a track from the current user's Liked Songs playlist.
+     * Requires the user to be authenticated via the Authorization Code Flow.
+     */
+    @DeleteMapping("/me/tracks")
+    public ResponseEntity<Map<String, Object>> unsaveTrack(@RequestParam String trackId,
+                                                            HttpSession session) {
+        if (!userTokenService.isLoggedIn(session)) {
+            return ResponseEntity.status(401)
+                    .body(Map.of("error", "NOT_AUTHENTICATED",
+                                 "message", "Please log in with Spotify first."));
+        }
+
+        String userToken = userTokenService.getUserAccessToken(session);
+
+        try {
+            spotifyClient.delete()
+                .uri(uriBuilder -> uriBuilder.path("/v1/me/tracks")
+                    .queryParam("ids", trackId)
+                    .build())
+                .header("Authorization", "Bearer " + userToken)
+                .header("Content-Type", "application/json")
+                .retrieve()
+                .toBodilessEntity();
+
+            return ResponseEntity.ok(Map.of("saved", false, "trackId", trackId));
+        } catch (RestClientResponseException ex) {
+            if (ex.getStatusCode().value() == 401) {
+                userTokenService.clearTokens(session);
+                return ResponseEntity.status(401)
+                    .body(Map.of("error", "NOT_AUTHENTICATED",
+                             "message", "Spotify session expired. Please log in again."));
+            }
+            if (ex.getStatusCode().value() == 403) {
+                userTokenService.clearTokens(session);
+                return ResponseEntity.status(403)
+                    .body(Map.of("error", "INSUFFICIENT_SCOPE",
+                             "message", "Spotify authorization is missing required permissions. Please reconnect Spotify."));
             }
             throw ex;
         }

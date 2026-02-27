@@ -728,13 +728,15 @@
             return;
         }
 
+        const isCurrentlySaved = button.classList.contains("saved");
         button.disabled = true;
-        const originalText = button.textContent;
-        button.textContent = "Saving...";
+        const originalText = button.dataset.originalText || "❤ Save";
+        button.dataset.originalText = originalText;
+        button.textContent = isCurrentlySaved ? "Unsaving..." : "Saving...";
 
         try {
             const res = await fetch(`/api/spotify/me/tracks?trackId=${encodeURIComponent(trackId)}`, {
-                method: "POST",
+                method: isCurrentlySaved ? "DELETE" : "POST",
                 headers: { "Accept": "application/json" }
             });
 
@@ -747,10 +749,21 @@
 
             if (!res.ok) throw new Error("Save failed");
 
+            if (isCurrentlySaved) {
+                button.textContent = "Unsaved!";
+                button.classList.remove("saved");
+                setTimeout(() => {
+                    button.textContent = button.dataset.originalText || "❤ Save";
+                    button.disabled = false;
+                }, 900);
+                return;
+            }
+
             button.textContent = "❤ Saved!";
             button.classList.add("saved");
+            button.disabled = false;
         } catch (err) {
-            button.textContent = originalText;
+            button.textContent = button.classList.contains("saved") ? "❤ Saved!" : originalText;
             button.disabled = false;
             console.error("Failed to save track", err);
         }
