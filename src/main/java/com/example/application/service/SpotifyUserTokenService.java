@@ -21,6 +21,8 @@ public class SpotifyUserTokenService {
     private static final String SESSION_ACCESS_TOKEN  = "spotifyUserAccessToken";
     private static final String SESSION_REFRESH_TOKEN = "spotifyUserRefreshToken";
     private static final String SESSION_TOKEN_EXPIRY  = "spotifyUserTokenExpiry";
+    private static final String SESSION_SCOPE         = "spotifyUserScope";
+    private static final String REQUIRED_SCOPE        = "user-library-modify";
 
     private final SpotifyProperties spotifyProperties;
     private final RestClient restClient;
@@ -37,7 +39,9 @@ public class SpotifyUserTokenService {
             return false;
         }
         Long expiry = (Long) session.getAttribute(SESSION_TOKEN_EXPIRY);
-        return expiry != null && System.currentTimeMillis() < expiry;
+        return expiry != null
+                && System.currentTimeMillis() < expiry
+                && hasRequiredScope(session);
     }
 
     /**
@@ -47,6 +51,11 @@ public class SpotifyUserTokenService {
     public String getUserAccessToken(HttpSession session) {
         if (session.getAttribute(SESSION_ACCESS_TOKEN) == null) {
             throw new IllegalStateException("User not authenticated with Spotify");
+        }
+
+        if (!hasRequiredScope(session)) {
+            clearTokens(session);
+            throw new IllegalStateException("Spotify authorization is missing required scope; please log in again");
         }
 
         Long expiry = (Long) session.getAttribute(SESSION_TOKEN_EXPIRY);
@@ -71,6 +80,9 @@ public class SpotifyUserTokenService {
         if (authResponse.getRefreshToken() != null) {
             session.setAttribute(SESSION_REFRESH_TOKEN, authResponse.getRefreshToken());
         }
+        if (authResponse.getScope() != null) {
+            session.setAttribute(SESSION_SCOPE, authResponse.getScope());
+        }
     }
 
     /** Removes all user auth data from the session. */
@@ -78,6 +90,7 @@ public class SpotifyUserTokenService {
         session.removeAttribute(SESSION_ACCESS_TOKEN);
         session.removeAttribute(SESSION_REFRESH_TOKEN);
         session.removeAttribute(SESSION_TOKEN_EXPIRY);
+        session.removeAttribute(SESSION_SCOPE);
     }
 
     // -------------------------------------------------------------------------
@@ -86,6 +99,7 @@ public class SpotifyUserTokenService {
         String clientId     = spotifyProperties.getClientId();
         String clientSecret = spotifyProperties.getClientSecret();
         String authUrl      = spotifyProperties.getAuthUrl();
+        String currentScope = (String) session.getAttribute(SESSION_SCOPE);
 
         String authHeader = "Basic " + Base64.getEncoder()
                 .encodeToString((clientId + ":" + clientSecret).getBytes());
@@ -114,10 +128,29 @@ public class SpotifyUserTokenService {
                         response.getScope());
             }
 
+            // Refresh responses may omit scope; preserve prior granted scope.
+            if (response.getScope() == null && currentScope != null) {
+                response = new SpotifyAuthResponse(
+                        response.getAccessToken(),
+                        response.getTokenType(),
+                        response.getExpiresIn(),
+                        response.getRefreshToken(),
+                        currentScope);
+            }
+
             storeTokens(session, response);
         } catch (Exception e) {
             clearTokens(session);
             throw new UpstreamServiceException("Failed to refresh Spotify user token", e);
         }
+    }
+
+    private boolean hasRequiredScope(HttpSession session) {
+        String scope = (String) session.getAttribute(SESSION_SCOPE);
+        if (scope == null || scope.isBlank()) {
+            return false;
+        }
+        return java.util.Arrays.stream(scope.split("\\s+"))
+                .anyMatch(REQUIRED_SCOPE::equals);
     }
 }

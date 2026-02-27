@@ -67,10 +67,10 @@ API credentials use `@ConfigurationProperties` classes (e.g., `SpotifyProperties
 ### Running Locally
 ```bash
 # Development mode (hot reload enabled)
-./mvnw spring-boot:run
+./mvnw.cmd spring-boot:run
 
 # Production build
-./mvnw -Pproduction package
+./mvnw.cmd -Pproduction package
 java -jar target/yt-to-spotify-1.0-SNAPSHOT.jar
 ```
 
@@ -83,7 +83,7 @@ YOUTUBE_API_KEY=your_key
 ```
 
 ### Code Formatting
-Project uses Spotless with Eclipse formatter. Run `./mvnw spotless:apply` before committing.
+Project uses Spotless with Eclipse formatter. Run `./mvnw.cmd spotless:apply` before committing.
 
 ## Project Conventions
 
@@ -106,4 +106,24 @@ Project uses Spotless with Eclipse formatter. Run `./mvnw spotless:apply` before
 ## Deployment
 
 Deployed on Koyeb. Docker builds use [Dockerfile](Dockerfile) with `eclipse-temurin:21-jre`. Production builds require the `-Pproduction` Maven profile to bundle Vaadin frontend assets.
+
+## Session Learnings (Important)
+
+### Spotify OAuth Redirect URI Rules
+- Spotify local redirect must use `127.0.0.1` (not `localhost`) for this project.
+- Keep Spotify dashboard callback URI aligned with app flow: `http://127.0.0.1:8080/api/spotify/auth/callback`.
+- If local auth works on `127.0.0.1` but fails on `localhost`, treat it as host mismatch/cookie-session mismatch first.
+
+### OAuth Behavior Expectations
+- `302` during `/api/spotify/auth/login` is expected and normal (redirect to Spotify authorize page).
+- If consent page does not appear, Spotify may be reusing prior consent; `show_dialog=true` can force the classic consent screen.
+
+### Local Dev Execution Etiquette
+- Before running `./mvnw.cmd spring-boot:run`, check whether the app is already running.
+- If startup fails with port-in-use, identify and stop the existing process or run on another port.
+- Use `./mvnw.cmd` for Maven commands in all shell examples and instructions.
+
+### Noise vs Real Errors
+- Requests to `/.well-known/appspecific/com.chrome.devtools.json` are often browser probes and not core app failures.
+- Prioritize diagnosing OAuth redirect URI, session host consistency, and token scope issues for Spotify login/save problems.
 

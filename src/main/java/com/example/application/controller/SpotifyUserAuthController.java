@@ -1,6 +1,7 @@
 package com.example.application.controller;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -8,6 +9,8 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,6 +23,7 @@ import com.example.application.model.spotify_dto.SpotifyAuthResponse;
 import com.example.application.service.SpotifyUserTokenService;
 
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 /**
@@ -50,11 +54,25 @@ public class SpotifyUserAuthController {
      * Redirects the browser to Spotify's authorization page.
      */
     @GetMapping("/login")
-    public void login(HttpSession session, HttpServletResponse response) throws IOException {
+    public void login(HttpSession session,
+                      HttpServletRequest request,
+                      HttpServletResponse response) throws IOException {
+        if (isLoopbackLocalhost(request.getServerName())) {
+            URI requestUri = URI.create(request.getRequestURL().toString());
+            URI canonicalUri = URI.create(requestUri.getScheme() + "://127.0.0.1:" + request.getServerPort()
+                    + requestUri.getPath());
+            String canonicalLoginUrl = canonicalUri.toString();
+            if (request.getQueryString() != null && !request.getQueryString().isBlank()) {
+                canonicalLoginUrl += "?" + request.getQueryString();
+            }
+            response.sendRedirect(canonicalLoginUrl);
+            return;
+        }
+
         String state = UUID.randomUUID().toString().replace("-", "");
         session.setAttribute(SESSION_STATE_KEY, state);
 
-        String redirectUri = spotifyProperties.getRedirectUri();
+        String redirectUri = resolveRedirectUri(request);
         String clientId    = spotifyProperties.getClientId();
 
         String url = SPOTIFY_AUTHORIZE_URL
@@ -62,6 +80,7 @@ public class SpotifyUserAuthController {
                 + "&response_type=code"
                 + "&redirect_uri="  + encode(redirectUri)
                 + "&scope="         + encode(REQUIRED_SCOPE)
+            + "&show_dialog=true"
                 + "&state="         + encode(state);
 
         response.sendRedirect(url);
@@ -75,6 +94,7 @@ public class SpotifyUserAuthController {
     public void callback(@RequestParam(required = false) String code,
                          @RequestParam(required = false) String state,
                          @RequestParam(required = false) String error,
+                         HttpServletRequest request,
                          HttpSession session,
                          HttpServletResponse response) throws IOException {
 
@@ -88,11 +108,17 @@ public class SpotifyUserAuthController {
             response.sendRedirect("/?spotifyAuthError=state_mismatch");
             return;
         }
+
+        if (code == null || code.isBlank()) {
+            response.sendRedirect("/?spotifyAuthError=missing_code");
+            return;
+        }
+
         session.removeAttribute(SESSION_STATE_KEY);
 
         String clientId     = spotifyProperties.getClientId();
         String clientSecret = spotifyProperties.getClientSecret();
-        String redirectUri  = spotifyProperties.getRedirectUri();
+        String redirectUri  = resolveRedirectUri(request);
         String authUrl      = spotifyProperties.getAuthUrl();
 
         String authHeader = "Basic " + Base64.getEncoder()
@@ -113,6 +139,16 @@ public class SpotifyUserAuthController {
 
             if (authResponse == null || authResponse.getAccessToken() == null) {
                 response.sendRedirect("/?spotifyAuthError=token_exchange_failed");
+                return;
+            }
+
+            String grantedScope = authResponse.getScope();
+            boolean hasRequiredScope = grantedScope != null
+                    && java.util.Arrays.stream(grantedScope.split("\\s+"))
+                    .anyMatch(REQUIRED_SCOPE::equals);
+            if (!hasRequiredScope) {
+                userTokenService.clearTokens(session);
+                response.sendRedirect("/?spotifyAuthError=insufficient_scope");
                 return;
             }
 
@@ -142,5 +178,23 @@ public class SpotifyUserAuthController {
 
     private static String encode(String value) {
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+    private String resolveRedirectUri(HttpServletRequest request) {
+        String configuredRedirectUri = spotifyProperties.getRedirectUri();
+        if (StringUtils.hasText(configuredRedirectUri)) {
+            return configuredRedirectUri;
+        }
+        return ServletUriComponentsBuilder.fromRequestUri(request)
+                .replacePath("/api/spotify/auth/callback")
+                .replaceQuery(null)
+                .build()
+                .toUriString();
+    }
+
+    private boolean isLoopbackLocalhost(String host) {
+        return "localhost".equalsIgnoreCase(host)
+                || "::1".equals(host)
+                || "0:0:0:0:0:0:0:1".equals(host);
     }
 }

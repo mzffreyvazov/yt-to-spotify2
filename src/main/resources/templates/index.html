@@ -738,7 +738,7 @@
                 headers: { "Accept": "application/json" }
             });
 
-            if (res.status === 401) {
+            if (res.status === 401 || res.status === 403) {
                 spotifyLoggedIn = false;
                 updateSpotifyAuthBar();
                 window.location.href = "/api/spotify/auth/login";
@@ -769,11 +769,12 @@
     // Handle Spotify OAuth redirect results
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has("spotifyAuthSuccess")) {
-        spotifyLoggedIn = true;
-        updateSpotifyAuthBar();
         window.history.replaceState({}, document.title, "/");
+        checkSpotifyAuthStatus();
     } else if (urlParams.has("spotifyAuthError")) {
         window.history.replaceState({}, document.title, "/");
+        spotifyLoggedIn = false;
+        updateSpotifyAuthBar();
     } else {
         checkSpotifyAuthStatus();
     }
