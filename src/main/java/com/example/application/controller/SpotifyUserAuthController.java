@@ -4,9 +4,13 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
@@ -35,7 +39,8 @@ import jakarta.servlet.http.HttpSession;
 public class SpotifyUserAuthController {
 
     private static final String SPOTIFY_AUTHORIZE_URL = "https://accounts.spotify.com/authorize";
-    private static final String REQUIRED_SCOPE        = "user-library-modify";
+    private static final List<String> REQUIRED_SCOPES = List.of("user-library-modify", "user-library-read");
+    private static final String REQUIRED_SCOPE        = String.join(" ", REQUIRED_SCOPES);
     private static final String SESSION_STATE_KEY     = "spotifyOAuthState";
 
     private final SpotifyProperties spotifyProperties;
@@ -143,10 +148,12 @@ public class SpotifyUserAuthController {
             }
 
             String grantedScope = authResponse.getScope();
-            boolean hasRequiredScope = grantedScope != null
-                    && java.util.Arrays.stream(grantedScope.split("\\s+"))
-                    .anyMatch(REQUIRED_SCOPE::equals);
-            if (!hasRequiredScope) {
+            Set<String> grantedScopes = grantedScope == null
+                    ? Set.of()
+                    : Arrays.stream(grantedScope.split("\\s+"))
+                        .collect(Collectors.toSet());
+            boolean hasRequiredScopes = REQUIRED_SCOPES.stream().allMatch(grantedScopes::contains);
+            if (!hasRequiredScopes) {
                 userTokenService.clearTokens(session);
                 response.sendRedirect("/?spotifyAuthError=insufficient_scope");
                 return;

@@ -1,6 +1,7 @@
 package com.example.application.controller;
 
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
@@ -46,6 +47,63 @@ public class SpotifyController {
     @GetMapping("/search/track")
     public SpotifyResponse getTrack(@RequestParam String trackId) {
         return spotifyService.getSingleTrack(trackId);
+    }
+
+    /**
+     * Checks whether each provided track is already saved in the current user's Liked Songs.
+     */
+    @GetMapping("/me/tracks/contains")
+    public ResponseEntity<Map<String, Object>> containsTracks(@RequestParam List<String> trackIds,
+                                                              HttpSession session) {
+        if (!userTokenService.isLoggedIn(session)) {
+            return ResponseEntity.status(401)
+                    .body(Map.of("error", "NOT_AUTHENTICATED",
+                                 "message", "Please log in with Spotify first."));
+        }
+
+        List<String> normalizedTrackIds = trackIds.stream()
+                .filter(trackId -> trackId != null && !trackId.isBlank())
+                .toList();
+
+        if (normalizedTrackIds.isEmpty()) {
+            return ResponseEntity.ok(Map.of("savedByTrack", Map.of()));
+        }
+
+        String userToken = userTokenService.getUserAccessToken(session);
+
+        try {
+            Boolean[] savedStatuses = spotifyClient.get()
+                .uri(uriBuilder -> uriBuilder.path("/v1/me/tracks/contains")
+                    .queryParam("ids", String.join(",", normalizedTrackIds))
+                    .build())
+                .header("Authorization", "Bearer " + userToken)
+                .retrieve()
+                .body(Boolean[].class);
+
+            Map<String, Boolean> savedByTrack = new LinkedHashMap<>();
+            for (int index = 0; index < normalizedTrackIds.size(); index++) {
+                boolean isSaved = savedStatuses != null
+                        && index < savedStatuses.length
+                        && Boolean.TRUE.equals(savedStatuses[index]);
+                savedByTrack.put(normalizedTrackIds.get(index), isSaved);
+            }
+
+            return ResponseEntity.ok(Map.of("savedByTrack", savedByTrack));
+        } catch (RestClientResponseException ex) {
+            if (ex.getStatusCode().value() == 401) {
+                userTokenService.clearTokens(session);
+                return ResponseEntity.status(401)
+                    .body(Map.of("error", "NOT_AUTHENTICATED",
+                             "message", "Spotify session expired. Please log in again."));
+            }
+            if (ex.getStatusCode().value() == 403) {
+                userTokenService.clearTokens(session);
+                return ResponseEntity.status(403)
+                    .body(Map.of("error", "INSUFFICIENT_SCOPE",
+                             "message", "Spotify authorization is missing required permissions. Please reconnect Spotify."));
+            }
+            throw ex;
+        }
     }
 
     /**

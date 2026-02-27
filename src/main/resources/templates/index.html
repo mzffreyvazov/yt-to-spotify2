@@ -530,12 +530,14 @@
     function createSpotifyCard(track, showSave) {
         const trackUrl = track.spotifyUrl || "";
         const trackId  = track.trackId   || "";
+        const isSaved  = !!track.isSaved;
         const cover    = track.albumImageUrl || "https://via.placeholder.com/80x80?text=♫";
         const safeUrl  = JSON.stringify(trackUrl);
         const safeId   = JSON.stringify(trackId);
+        const safeTrackIdAttr = escapeHtml(trackId);
 
         const saveBtn = (showSave && trackId)
-            ? `<button class="action-btn save" type="button" onclick='saveTrack(${safeId}, this)'>❤ Save</button>`
+            ? `<button class="action-btn save ${isSaved ? "saved" : ""}" data-track-id="${safeTrackIdAttr}" type="button" onclick='saveTrack(${safeId}, this)'>${isSaved ? "Unsave" : "❤ Save"}</button>`
             : "";
 
         return `
@@ -572,6 +574,53 @@
                 </div>
             </div>
         `;
+    }
+
+    function setSaveButtonState(button, saved) {
+        button.classList.toggle("saved", !!saved);
+        button.textContent = saved ? "Unsave" : (button.dataset.originalText || "❤ Save");
+        button.disabled = false;
+    }
+
+    async function markAlreadySavedTracks(items) {
+        if (mode !== "YOUTUBE_TO_SPOTIFY" || !spotifyLoggedIn || !Array.isArray(items) || items.length === 0) {
+            return;
+        }
+
+        const trackIds = [...new Set(items.map(item => item?.trackId).filter(Boolean))];
+        if (trackIds.length === 0) {
+            return;
+        }
+
+        const query = trackIds.map(trackId => `trackIds=${encodeURIComponent(trackId)}`).join("&");
+
+        try {
+            const response = await fetch(`/api/spotify/me/tracks/contains?${query}`, {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+
+            if (response.status === 401 || response.status === 403) {
+                spotifyLoggedIn = false;
+                updateSpotifyAuthBar();
+                return;
+            }
+
+            if (!response.ok) {
+                return;
+            }
+
+            const payload = await response.json();
+            const savedByTrack = payload?.savedByTrack || {};
+
+            for (const trackId of trackIds) {
+                const isSaved = !!savedByTrack[trackId];
+                const buttons = resultsEl.querySelectorAll(`button.action-btn.save[data-track-id="${trackId}"]`);
+                buttons.forEach(button => setSaveButtonState(button, isSaved));
+            }
+        } catch (error) {
+            console.error("Failed to fetch saved track state", error);
+        }
     }
 
     function renderSimpleSearchResults(payload) {
@@ -621,6 +670,10 @@
             .map(item => mode === "YOUTUBE_TO_SPOTIFY" ? createSpotifyCard(item, true) : createYoutubeCard(item))
             .join("");
         resultsEl.innerHTML = `${header}${cards}`;
+
+        if (mode === "YOUTUBE_TO_SPOTIFY") {
+            markAlreadySavedTracks(items);
+        }
     }
 
     async function processLink() {
@@ -751,20 +804,18 @@
 
             if (isCurrentlySaved) {
                 button.textContent = "Unsaved!";
-                button.classList.remove("saved");
                 setTimeout(() => {
-                    button.textContent = button.dataset.originalText || "❤ Save";
-                    button.disabled = false;
+                    setSaveButtonState(button, false);
                 }, 900);
                 return;
             }
 
-            button.textContent = "❤ Saved!";
-            button.classList.add("saved");
-            button.disabled = false;
+            button.textContent = "Saved!";
+            setTimeout(() => {
+                setSaveButtonState(button, true);
+            }, 900);
         } catch (err) {
-            button.textContent = button.classList.contains("saved") ? "❤ Saved!" : originalText;
-            button.disabled = false;
+            setSaveButtonState(button, isCurrentlySaved);
             console.error("Failed to save track", err);
         }
     };
