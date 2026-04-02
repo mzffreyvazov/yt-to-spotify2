@@ -56,8 +56,10 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping
-    public ResponseEntity<List<UserResponse>> getAll() {
-        return ResponseEntity.ok(userService.findAll());
+    public ResponseEntity<Page<UserResponse>> getAll(
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
+            Pageable pageable) {
+        return ResponseEntity.ok(userService.findAll(pageable));
     }
 
     @GetMapping("/{id}")
@@ -73,6 +75,7 @@ public class UserController {
             .path("/{id}")
             .buildAndExpand(created.getId())
             .toUri();
+        // Include Location header so clients can navigate to the canonical resource URI (REST maturity/HATEOAS basics).
         return ResponseEntity.created(location).body(created);
     }
 
@@ -100,6 +103,7 @@ public class UserController {
 | HTTP methods | GET=read, POST=create, PUT=update, DELETE=delete |
 | Status codes | 200=OK, 201=Created, 204=NoContent, 404=NotFound |
 | Validation | `@Valid` on request body |
+| Collection reads | Use `Pageable` + `Page<T>` (avoid unbounded `List<T>`) |
 
 ### ❌ Anti-patterns
 ```java
@@ -115,6 +119,19 @@ public User create(@RequestBody User user) {
 public User getById(@PathVariable Long id) {
     return userRepository.findById(id).get();
 }
+
+// ❌ Unbounded collection endpoint can cause OOM on large datasets
+@GetMapping
+public ResponseEntity<List<UserResponse>> getAll() {
+    return ResponseEntity.ok(userService.findAll());
+}
+
+// ❌ Field injection is hard to mock and hides dependency bloat
+@RestController
+public class UserController {
+    @Autowired
+    private UserService userService;
+}
 ```
 
 ---
@@ -125,7 +142,7 @@ public User getById(@PathVariable Long id) {
 ```java
 // Interface
 public interface UserService {
-    List<UserResponse> findAll();
+    Page<UserResponse> findAll(Pageable pageable);
     UserResponse findById(Long id);
     UserResponse create(CreateUserRequest request);
     UserResponse update(Long id, UpdateUserRequest request);
@@ -142,10 +159,9 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
 
     @Override
-    public List<UserResponse> findAll() {
-        return userRepository.findAll().stream()
-            .map(userMapper::toResponse)
-            .toList();
+    public Page<UserResponse> findAll(Pageable pageable) {
+        return userRepository.findAll(pageable)
+            .map(userMapper::toResponse);
     }
 
     @Override
@@ -181,6 +197,7 @@ public class UserServiceImpl implements UserService {
 - `@Transactional` for write methods
 - Throw domain exceptions, not generic ones
 - Use mappers (MapStruct) for entity ↔ DTO conversion
+- Use `Pageable` for collection endpoints to avoid unbounded reads
 
 ---
 
@@ -346,6 +363,9 @@ app:
     expiration: 86400000
 ```
 
+Schema lifecycle note:
+- Keep `ddl-auto: validate` in production and manage schema evolution with Flyway or Liquibase migrations.
+
 ### Configuration Properties Class
 ```java
 @Configuration
@@ -448,6 +468,7 @@ class UserServiceImplTest {
 class UserIntegrationTest {
 
     @Container
+    @ServiceConnection // ✅ Spring Boot 3.1+: auto-binds container connection properties
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15");
 
     @Autowired
