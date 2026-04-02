@@ -1,6 +1,6 @@
 ---
 name: jpa-patterns
-description: JPA/Hibernate patterns and common pitfalls (N+1, lazy loading, transactions, queries). Use when user has JPA performance issues, LazyInitializationException, or asks about entity relationships and fetching strategies.
+description: JPA/Hibernate patterns and common pitfalls (N+1, lazy loading, transactions, queries, projections, soft deletes, auditing). Use when user has JPA performance issues, LazyInitializationException, or asks about entity relationships and fetching strategies.
 ---
 
 # JPA Patterns Skill
@@ -15,6 +15,12 @@ Best practices and common pitfalls for JPA/Hibernate in Spring applications.
 - Entity relationship design
 - Query optimization
 
+## Negative Triggers (When NOT to Use)
+- Simple JDBC/JdbcTemplate tasks without JPA entities
+- NoSQL data access patterns (MongoDB, Redis, Cassandra)
+- MyBatis or other non-JPA ORM frameworks
+- Pure SQL tuning tasks that do not involve JPA/Hibernate mapping behavior
+
 ---
 
 ## Quick Reference: Common Problems
@@ -24,6 +30,7 @@ Best practices and common pitfalls for JPA/Hibernate in Spring applications.
 | N+1 queries | Many SELECT statements | JOIN FETCH, @EntityGraph |
 | LazyInitializationException | Error outside transaction | Open Session in View, DTO projection, JOIN FETCH |
 | Slow queries | Performance issues | Pagination, projections, indexes |
+| Over-fetching | Wide SELECT and high memory usage | Interface-based projection |
 | Dirty checking overhead | Slow updates | Read-only transactions, DTOs |
 | Lost updates | Concurrent modifications | Optimistic locking (@Version) |
 
@@ -408,6 +415,30 @@ public class Course {
 }
 ```
 
+### Lombok Warning: Avoid @Data on Entities
+
+```java
+// ❌ BAD: @Data generates equals/hashCode across all fields (including lazy relations)
+@Data
+@Entity
+public class Book {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @OneToMany(mappedBy = "book", fetch = FetchType.LAZY)
+    private List<Review> reviews;
+}
+```
+
+Pitfalls of `@Data` on entities:
+- Generated equals/hashCode can touch lazy collections and trigger unexpected fetches
+- New entities with `id == null` can break `Set`/`Map` contracts when ID changes after persist
+
+Recommended action for AI agents:
+- Avoid `@Data` on JPA entities
+- Use `@Getter` and `@Setter`
+- Implement equals/hashCode manually using a stable Natural ID when available
+
 ### equals() and hashCode() for Entities
 
 ```java
@@ -460,12 +491,14 @@ Pageable pageable = PageRequest.of(0, 20, Sort.by("createdAt").descending());
 Page<Order> orders = orderRepository.findByStatus(OrderStatus.PENDING, pageable);
 ```
 
-### DTO Projections
+### Projections (Prefer Interface-based)
+
+Interface-based projections should be the default choice for read paths where full entities are not required. They are easier for AI agents to generate and typically allow Spring Data JPA to select only needed columns, which reduces memory footprint and DB-to-service network I/O.
 
 ```java
 // ✅ GOOD: Fetch only needed columns
 
-// Interface-based projection
+// Preferred: Interface-based projection
 public interface OrderSummary {
     Long getId();
     String getCustomerName();
@@ -476,13 +509,17 @@ public interface OrderSummary {
        "FROM Order o WHERE o.status = :status")
 List<OrderSummary> findOrderSummaries(@Param("status") OrderStatus status);
 
-// Class-based projection (DTO)
+// Class-based projection (DTO/record) - use when you need constructor-based mapping
 public record OrderDTO(Long id, String customerName, BigDecimal total) {}
 
 @Query("SELECT new com.example.dto.OrderDTO(o.id, o.customer.name, o.total) " +
        "FROM Order o WHERE o.status = :status")
 List<OrderDTO> findOrderDTOs(@Param("status") OrderStatus status);
 ```
+
+When choosing projection style:
+- Use interface-based projections first for simple read models and best SQL trimming
+- Use class-based projections when transformation logic or strict immutable contracts are needed
 
 ### Bulk Operations
 
@@ -574,6 +611,58 @@ public class OrderService {
 
 ---
 
+## Soft Deletes and Auditing
+
+Enterprise domains usually require logical deletion and lifecycle traceability rather than hard delete.
+
+```java
+// ✅ GOOD: Soft delete + auditing baseline
+@Entity
+@SQLDelete(sql = "UPDATE customer SET deleted = true WHERE id = ?")
+@Where(clause = "deleted = false")
+@EntityListeners(AuditingEntityListener.class)
+public class Customer {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private boolean deleted = false;
+
+    @CreatedDate
+    private Instant createdAt;
+
+    @LastModifiedDate
+    private Instant updatedAt;
+}
+```
+
+```java
+// Enable auditing in configuration
+@Configuration
+@EnableJpaAuditing
+public class JpaAuditConfig {
+}
+```
+
+Notes:
+- `@Where` filters soft-deleted rows from standard reads
+- Bulk queries and native SQL may bypass soft-delete semantics unless handled explicitly
+
+---
+
+## Pattern Verification with @DataJpaTest
+
+Use lightweight repository integration tests to verify fetch behavior, projections, and mapping assumptions.
+
+```java
+@DataJpaTest
+@AutoConfigureTestDatabase(replace = Replace.NONE) // Use real DB for integration tests
+class RepositoryTest {
+    // verify projections, fetch joins, and query correctness against real dialect behavior
+}
+```
+
+---
+
 ## Common Mistakes
 
 ### 1. Cascade Misuse
@@ -641,12 +730,16 @@ When reviewing JPA code, check:
 - [ ] No N+1 queries (use JOIN FETCH or @EntityGraph)
 - [ ] LAZY fetch by default (especially @ManyToOne)
 - [ ] Pagination for large result sets
-- [ ] DTO projections for read-only queries
+- [ ] Interface-based projections preferred for read-only queries
+- [ ] Class-based DTO projections used only when needed
 - [ ] Bulk operations for batch updates/deletes
 - [ ] @Version for entities with concurrent access
 - [ ] Indexes on frequently queried columns
+- [ ] No `@Data` on entities; equals/hashCode are explicitly designed
 - [ ] No lazy fields in toString()
 - [ ] Read-only transactions where applicable
+- [ ] Soft delete/auditing strategy is explicit for lifecycle-sensitive entities
+- [ ] Key repository paths are validated with `@DataJpaTest`
 
 ---
 
