@@ -321,6 +321,25 @@ public Document getDocument(@PathVariable Long id) {
 }
 ```
 
+### BOLA (Broken Object Level Authorization)
+
+This is a top API risk: every object-level read/write must verify ownership or explicit entitlement.
+
+```java
+// ✅ ALWAYS verify resource ownership against authenticated user
+Document doc = repo.findById(id)
+    .orElseThrow(() -> new NotFoundException("Document not found"));
+
+if (!doc.getOwnerId().equals(authenticatedUser.getId())) {
+    throw new AccessDeniedException("Unauthorized access to resource");
+}
+```
+
+Review flags for BOLA:
+- Resource ID accepted from path/body without ownership/tenant check
+- Controller-level checks only, with missing service-layer enforcement
+- Bulk endpoints returning resources across user/tenant boundaries
+
 ### Spring Security Annotations
 
 ```java
@@ -333,6 +352,75 @@ public void ownDataOnly(Long userId) { }
 @PreAuthorize("@authService.canAccess(#documentId, authentication)")
 public Document getDocument(Long documentId) { }
 ```
+
+### Spring Security 6.x Syntax (Spring Boot 3.x)
+
+Prefer Lambda DSL and `requestMatchers`; avoid legacy matcher chaining that was removed/deprecated.
+
+```java
+// ✅ Spring Security 6.x style
+@Bean
+public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    http.authorizeHttpRequests(auth -> auth
+        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+        .anyRequest().authenticated()
+    );
+    return http.build();
+}
+```
+
+---
+
+## SSRF & Path Traversal Protection
+
+### SSRF Defense for Outbound Requests
+
+```java
+// ✅ GOOD: allowlist destination hosts for outbound HTTP
+URI target = URI.create(url);
+Set<String> allowedHosts = Set.of("api.trusted-partner.com", "storage.internal.company");
+if (!allowedHosts.contains(target.getHost())) {
+    throw new SecurityException("Blocked outbound request target");
+}
+```
+
+SSRF review flags:
+- User-controlled URL passed directly to HTTP client
+- No hostname/IP allowlist before outbound calls
+- Requests to internal metadata endpoints (for example cloud instance metadata)
+
+### Path Traversal / Zip Slip Defense
+
+```java
+// ✅ Sanitize and validate file names before saving
+String filename = StringUtils.cleanPath(file.getOriginalFilename());
+if (filename.contains("..")) {
+    throw new SecurityException("Potential Path Traversal attack!");
+}
+```
+
+Path traversal review flags:
+- Direct use of uploaded filename in filesystem paths
+- Archive extraction without canonical path boundary checks
+
+---
+
+## CORS Configuration Safety
+
+Never use wildcard origins for credentialed or production APIs.
+
+```java
+// ❌ VULNERABLE: broad wildcard
+config.addAllowedOrigin("*");
+
+// ✅ SECURE: explicit trusted origins
+config.setAllowedOrigins(List.of("https://trusted-app.com"));
+```
+
+For Spring Security/API review:
+- Verify CORS origin list is environment-specific and explicit
+- Reject `*` in production profiles
+- Ensure allowed methods/headers are minimal and justified
 
 ---
 
@@ -528,15 +616,19 @@ log.debug("Request body: {}", requestWithCreditCard);  // NEVER!
 - [ ] SQL queries use parameters (no concatenation)
 - [ ] Output encoded for context (HTML, JS, URL)
 - [ ] Authorization checked at service layer
+- [ ] BOLA checks: authenticated user/tenant can only access owned resources
 - [ ] No hardcoded secrets
 - [ ] Passwords hashed with BCrypt/Argon2
 - [ ] Sensitive data not logged
 - [ ] CSRF protection enabled (for browser apps)
+- [ ] Outbound HTTP targets validated to reduce SSRF risk
+- [ ] File upload/extraction paths sanitized (path traversal and Zip Slip prevention)
 
 ### Configuration
 
 - [ ] HTTPS enforced
 - [ ] Security headers configured
+- [ ] CORS uses explicit trusted origins (no wildcard in production)
 - [ ] Debug/dev features disabled in production
 - [ ] Default credentials changed
 - [ ] Error messages don't leak internal details
