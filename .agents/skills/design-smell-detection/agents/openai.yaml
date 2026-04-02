@@ -1,0 +1,4 @@
+interface:
+  display_name: "Design Smell Detection"
+  short_description: "Spot domain and architecture smells"
+  default_prompt: "Use $design-smell-detection to review this Java/Spring code for domain-model and architectural design smells."
