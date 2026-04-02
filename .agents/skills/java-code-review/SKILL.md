@@ -1,6 +1,6 @@
 ---
 name: java-code-review
-description: Systematic code review for Java with null safety, exception handling, concurrency, and performance checks. Use when user says "review code", "check this PR", "code review", or before merging changes.
+description: Systematic code review for Java with modern Java 17/21 idioms, null safety, exception handling, security/logging, concurrency, and performance checks. Use when user says "review code", "check this PR", "code review", or before merging changes.
 ---
 
 # Java Code Review Skill
@@ -108,7 +108,31 @@ catch (IOException e) {
 - Log with context AND stack trace
 - Use specific exception types
 - Chain exceptions with `cause`
-- Consider custom exceptions for domain errors
+- Prefer unchecked custom exceptions (`RuntimeException`) for domain/business errors
+- Flag newly introduced checked exceptions unless required for legacy/external APIs
+
+**Unchecked Exception Guidance:**
+```java
+// ❌ Checked exception for business flow (adds signature noise)
+public void approve(Order order) throws BusinessException {
+    if (!order.canApprove()) {
+        throw new BusinessException("Cannot approve");
+    }
+}
+
+// ✅ Prefer unchecked domain exception
+public void approve(Order order) {
+    if (!order.canApprove()) {
+        throw new DomainException("Cannot approve");
+    }
+}
+
+public class DomainException extends RuntimeException {
+    public DomainException(String message) {
+        super(message);
+    }
+}
+```
 
 ### 3. Collections & Streams
 
@@ -182,6 +206,20 @@ if (instance == null) {
         }
     }
 }
+
+// ❌ BAD (Java 21): synchronized can pin Virtual Threads
+synchronized(this) {
+    processTask();
+}
+
+// ✅ GOOD: lock-based control for Virtual Thread compatibility
+Lock lock = new ReentrantLock();
+lock.lock();
+try {
+    processTask();
+} finally {
+    lock.unlock();
+}
 ```
 
 **Flags:**
@@ -190,12 +228,14 @@ if (instance == null) {
 - Missing `volatile` on shared variables
 - Synchronized on non-final objects
 - Thread-unsafe lazy initialization
+- Long-running or blocking work inside `synchronized` in Java 21+ codebases (Virtual Thread pinning risk)
 
 **Suggest:**
 - Prefer immutable objects
 - Use `java.util.concurrent` classes
 - `AtomicReference`, `AtomicInteger` for simple cases
 - Consider `@ThreadSafe` / `@NotThreadSafe` annotations
+- Prefer lock strategies or structured concurrency primitives compatible with Virtual Threads
 
 ### 5. Java Idioms
 
@@ -241,21 +281,36 @@ public String toString() {
 }
 ```
 
-**Builders:**
+**Records over Builders for DTO/immutable carriers:**
 ```java
-// ✅ For classes with many optional parameters
-User user = User.builder()
-    .name("John")
-    .email("john@example.com")
-    .build();
+// ✅ Prefer records for immutable data carriers
+public record UserSummary(Long id, String name, String email) {}
+
+// Use builders when object construction truly needs staged/optional composition
+```
+
+**Pattern Matching (Modern Java):**
+```java
+// ✅ instanceof pattern matching
+if (obj instanceof User user && user.active()) {
+    audit(user.id());
+}
+
+// ✅ switch pattern matching (Java 21)
+return switch (event) {
+    case UserCreatedEvent e -> handleCreated(e);
+    case UserDeletedEvent e -> handleDeleted(e);
+    default -> throw new IllegalStateException("Unsupported event: " + event);
+};
 ```
 
 **Flags:**
 - `equals` without `hashCode`
 - Mutable fields in `hashCode`
 - Missing `toString` on domain objects
-- Constructors with > 3-4 parameters (suggest builder)
-- Not using `instanceof` pattern matching (Java 16+)
+- DTO-like classes with boilerplate getters/constructors where records fit better
+- Constructors with > 3-4 parameters (suggest builder only when records/parameter objects do not fit)
+- Not using `instanceof` / `switch` pattern matching in Java 17/21 codebases
 
 ### 6. Resource Management
 
@@ -367,7 +422,38 @@ Map<Long, List<Order>> ordersByUser = orderRepo.findByUserIds(userIds);
 - Creating objects in tight loops that could be reused
 - Not using primitive streams (`IntStream`, `LongStream`)
 
-### 9. Testing Hints
+### 9. Security & Logging
+
+**Check for:**
+```java
+// ❌ BAD: string concatenation in logs (performance + log forging risk)
+log.info("User logged in: " + username);
+
+// ✅ GOOD: parameterized logging
+log.info("User logged in: {}", username);
+
+// ❌ BAD: raw SQL concatenation (injection risk)
+String sql = "SELECT * FROM users WHERE email = '" + email + "'";
+
+// ✅ GOOD: parameterized query
+jdbcTemplate.query("SELECT * FROM users WHERE email = ?", rowMapper, email);
+
+// ❌ BAD: unvalidated input in OS command
+new ProcessBuilder("sh", "-c", "grep " + userInput).start();
+```
+
+**Flags:**
+- String concatenation in logs instead of parameterized placeholders
+- Logging unsanitized user-controlled data in security-sensitive flows
+- SQL/JPQL/native query string concatenation with user input
+- Unvalidated or unsanitized user input passed to `ProcessBuilder`, `Runtime.exec`, or shell commands
+
+**Suggest:**
+- Always use parameterized logging (`{}` placeholders)
+- Prefer prepared/parameterized queries and repository parameters
+- Validate and sanitize command/query inputs, or avoid shell execution entirely
+
+### 10. Testing Hints
 
 **Suggest tests for:**
 - Null inputs
@@ -402,7 +488,8 @@ Map<Long, List<Order>> ordersByUser = orderRepo.findByUserIds(userIds);
 | Exceptions | Empty catch, broad catch, lost stack trace |
 | Collections | Modification during iteration, stream vs loop |
 | Concurrency | Shared mutable state, check-then-act |
-| Idioms | equals/hashCode pair, toString, builders |
+| Idioms | equals/hashCode pair, toString, records, pattern matching |
 | Resources | try-with-resources, connection leaks |
 | API | Boolean params, null handling, validation |
 | Performance | String concat, regex in loop, N+1 |
+| Security/Logging | Parameterized logs, injection risks, unsafe command execution |
