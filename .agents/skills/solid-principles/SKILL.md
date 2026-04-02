@@ -1,6 +1,6 @@
 ---
 name: solid-principles
-description: SOLID principles checklist with Java examples. Use when reviewing classes, refactoring code, or when user asks about Single Responsibility, Open/Closed, Liskov, Interface Segregation, or Dependency Inversion.
+description: SOLID principles checklist with modern Java 17/21 examples. Use when reviewing classes, refactoring code, or when user asks about Single Responsibility, Open/Closed, Liskov, Interface Segregation, or Dependency Inversion.
 ---
 
 # SOLID Principles Skill
@@ -17,13 +17,13 @@ Review and apply SOLID principles in Java code.
 
 ## Quick Reference
 
-| Letter | Principle | One-liner |
-|--------|-----------|-----------|
-| **S** | Single Responsibility | One class = one reason to change |
-| **O** | Open/Closed | Open for extension, closed for modification |
-| **L** | Liskov Substitution | Subtypes must be substitutable for base types |
-| **I** | Interface Segregation | Many specific interfaces > one general interface |
-| **D** | Dependency Inversion | Depend on abstractions, not concretions |
+| Principle | Modern Java Tool | Critical Detection |
+|-----------|------------------|--------------------|
+| **SRP** | `record`, `final` fields | Does the test file require massive mocking for one method? |
+| **OCP** | Sealed classes, pattern-matching `switch` | Does adding a feature touch existing `if/else` or type dispatch? |
+| **LSP** | Composition over inheritance | Is there `UnsupportedOperationException` or behavior surprises in subtypes? |
+| **ISP** | `@FunctionalInterface`, `java.util.function` | Is the interface broad/generic (e.g., `*Manager`) with mixed responsibilities? |
+| **DIP** | Constructor injection, Spring `@Bean` wiring | Is `new` used for business dependencies in domain/application code? |
 
 ---
 
@@ -123,12 +123,14 @@ public class UserService {
 - Methods operate on unrelated data
 - Changes in one area require touching unrelated methods
 - Hard to name the class concisely
+- A single unit test needs heavy setup/mocking (for example, dozens of lines) just to exercise one method
 
 ### Quick Check Questions
 
 1. Can you describe the class purpose in one sentence without "and"?
 2. Would different stakeholders request changes to this class?
 3. Are there methods that don't use most of the class fields?
+4. Does one test for this class require excessive mocks/stubs to isolate behavior?
 
 ---
 
@@ -232,6 +234,29 @@ public class DiscountCalculator {
 }
 ```
 
+### Modern OCP with Sealed Types (Java 17+)
+
+Sealed hierarchies constrain the type space while still allowing clean extension of behavior through pattern matching.
+
+```java
+// ✅ MODERN OCP: constrained model + extensible behavior
+public sealed interface Discount permits Percentage, Fixed, Seasonal {}
+
+public record Percentage(double rate) implements Discount {}
+public record Fixed(double amount) implements Discount {}
+public record Seasonal() implements Discount {}
+
+public class DiscountService {
+    public double apply(double total, Discount discount) {
+        return switch (discount) {
+            case Percentage p -> total * p.rate();
+            case Fixed f -> f.amount();
+            case Seasonal s -> total * 0.5;
+        };
+    }
+}
+```
+
 ### How to Detect OCP Violations
 
 - `if/else` or `switch` on type/status that grows over time
@@ -330,6 +355,46 @@ public class Square implements Shape {
     @Override
     public int getArea() {
         return side * side;
+    }
+}
+```
+
+### LSP Cure: Favor Composition Over Inheritance
+
+Most practical LSP failures come from forcing "is-a" relationships where behavior is not actually substitutable.
+
+```java
+// ❌ LSP risk: forced inheritance hierarchy
+public class Square extends Rectangle { /* behavior conflicts */ }
+
+// ✅ LSP repair: composition via shared abstraction
+public interface Shape {
+    int getArea();
+}
+
+public class Square implements Shape {
+    private final int side;
+
+    public Square(int side) {
+        this.side = side;
+    }
+
+    public int getArea() {
+        return side * side;
+    }
+}
+
+public class Rectangle implements Shape {
+    private final int w;
+    private final int h;
+
+    public Rectangle(int w, int h) {
+        this.w = w;
+        this.h = h;
+    }
+
+    public int getArea() {
+        return w * h;
     }
 }
 ```
@@ -437,6 +502,30 @@ public class Intern implements Workable, Feedable {
     @Override public void eat() { /* ... */ }
     @Override public void sleep() { /* ... */ }
     // No meeting/report methods!
+}
+```
+
+### ISP with Functional Interfaces (Modern Java)
+
+Many ISP improvements can be expressed as small injectable behaviors instead of broad multi-method interfaces.
+
+```java
+// ❌ FAT INTERFACE: clients depend on unrelated methods
+public interface UserProcessor {
+    void process(User u);
+    void log(User u);
+    void notify(User u);
+}
+
+// ✅ SEGREGATED: small behaviors via functional interfaces
+public void handleUser(User u, Consumer<User> processor, Consumer<User> logger) {
+    processor.accept(u);
+    logger.accept(u);
+}
+
+@FunctionalInterface
+public interface UserNotifier {
+    void notify(User u);
 }
 ```
 
@@ -606,12 +695,40 @@ public class SmtpEmailSender implements NotificationSender { }
 public class MockEmailSender implements NotificationSender { }
 ```
 
+### DIP as Foundation for Hexagonal Architecture (Ports and Adapters)
+
+Domain code should define ports; infrastructure code should implement adapters. Domain must not import framework/infrastructure classes.
+
+```java
+// ❌ DIP violation: domain depends on infrastructure/framework
+package com.app.domain;
+import org.springframework.web.client.RestTemplate;
+
+// ✅ DIP/Hexagonal: domain defines a port
+package com.app.domain;
+public interface ExternalClient {
+    Data fetch();
+}
+```
+
 ### How to Detect DIP Violations
 
 - `new ConcreteClass()` inside business logic
 - Import statements include implementation packages (e.g., `com.mysql`, `org.apache.http`)
 - Cannot easily swap implementations
 - Tests require real infrastructure (database, network)
+- Domain module/package imports infrastructure, framework, or adapter classes directly
+
+---
+
+## SOLID vs KISS Tradeoff
+
+Do not over-abstract simple code. Over-applying SOLID can produce unnecessary interfaces and indirection.
+
+Guideline:
+- Don't extract an interface when there is only one implementation and low change pressure
+- Apply OCP/DIP abstractions when variability, testing cost, or change frequency is high
+- Prefer the simplest design that keeps change cost acceptable
 
 ---
 
@@ -634,9 +751,9 @@ When reviewing code, check:
 | Violation | Refactoring |
 |-----------|-------------|
 | SRP - God class | Extract Class, Move Method |
-| OCP - Type switching | Strategy Pattern, Factory |
+| OCP - Type switching | Strategy Pattern, Sealed Types + Pattern Matching |
 | LSP - Broken inheritance | Composition over Inheritance, Extract Interface |
-| ISP - Fat interface | Split Interface, Role Interface |
+| ISP - Fat interface | Split Interface, Role Interface, Functional Interfaces |
 | DIP - Hard dependencies | Dependency Injection, Abstract Factory |
 
 ---
